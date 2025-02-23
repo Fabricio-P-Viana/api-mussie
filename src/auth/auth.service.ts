@@ -22,6 +22,35 @@ export class AuthService {
     private mailService: MailService,
   ) {}
 
+  async getPortfolio(userId: number): Promise<{ id: number; name: string; nameConfectionery: string; phone: string; recipes: any[] }> {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ['recipes'],
+      });
+      if (!user) {
+        throw new BadRequestException('Usuário não encontrado');
+      }
+      return {
+        id: user.id,
+        name: user.name,
+        nameConfectionery: user.nameConfectionery || '',
+        phone: user.phone || '',
+        recipes: user.recipes.map(recipe => ({
+          id: recipe.id,
+          name: recipe.name,
+          price: recipe.price,
+          description: recipe.description,
+          image: recipe.image,
+        })),
+      };
+    } catch (error) {
+      console.error('Erro ao buscar portfólio:', error);
+      if (error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException('Erro ao buscar portfólio');
+    }
+  }
+
   async register(registerDto: RegisterDto): Promise<{ access_token: string; refresh_token: string }> {
     try {
       const hashedPassword = await bcrypt.hash(registerDto.password, 10);

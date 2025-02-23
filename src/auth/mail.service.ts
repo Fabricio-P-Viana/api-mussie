@@ -19,7 +19,7 @@ export class MailService {
   }
 
   async sendResetPasswordEmail(to: string, token: string) {
-    const resetLink = `http://localhost:${this.configService.get<number>('APP_PORT')}/auth/reset-password?token=${token}`;
+    const resetLink = `http://localhost:${this.configService.get<number>('APP_PORT_FRONT')}/reset-password?token=${token}`;
     await this.transporter.sendMail({
       from: `"Confeitaria API" <${this.configService.get<string>('MAIL_USER')}>`,
       to,

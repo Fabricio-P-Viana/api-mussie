@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseInterceptors, UploadedFile, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, UseInterceptors, UploadedFile, UseGuards, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -101,5 +101,13 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Refresh token inválido ou expirado' })
   refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
     return this.authService.refreshToken(refreshTokenDto);
+  }
+  
+  @Get('/users/:userId/portfolio')
+  @ApiOperation({ summary: 'Obtém o portfólio público de um usuário' })
+  @ApiResponse({ status: 200, description: 'Portfólio retornado com sucesso' })
+  @ApiResponse({ status: 400, description: 'Usuário não encontrado' })
+  async getPortfolio(@Param('userId', ParseIntPipe) userId: number) {
+    return this.authService.getPortfolio(userId);
   }
 }
