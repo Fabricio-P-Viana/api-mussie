@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { RecipeIngredient } from './recipe-ingredient.entity';
 
 @Entity()
@@ -13,8 +13,14 @@ export class Recipe {
   servings: number;
 
   @Column({ nullable: true })
-  image: string; // Caminho da imagem no servidor
+  image: string;
 
   @OneToMany(() => RecipeIngredient, (recipeIngredient) => recipeIngredient.recipe, { cascade: true })
   ingredients: RecipeIngredient[];
+
+  @CreateDateColumn({ type: 'timestamp' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamp' })
+  updatedAt: Date;
 }

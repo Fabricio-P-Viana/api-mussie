@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Recipe } from '../../recipes/entities/recipe.entity';
 
 @Entity()
@@ -14,4 +14,10 @@ export class Order {
 
   @Column({ default: 'pending' })
   status: 'pending' | 'completed' | 'canceled';
+
+  @CreateDateColumn({ type: 'timestamp' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamp' })
+  updatedAt: Date;
 }

@@ -1,10 +1,10 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Query, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Query, UseInterceptors, UploadedFile, ParseIntPipe, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RecipesService } from './recipes.service';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
 import { PaginationPipe } from '../common/pipes/pagination.pipe';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth, ApiConsumes, ApiBody, ApiParam } from '@nestjs/swagger';
 
 @ApiTags('recipes')
 @Controller('recipes')
@@ -22,14 +22,16 @@ export class RecipesController {
       type: 'object',
       properties: {
         name: { type: 'string' },
-        servings: { type: 'number' },
+        servings: { type: 'number', minimum: 1 },
         ingredients: { type: 'array', items: { type: 'object', properties: { ingredientId: { type: 'number' }, amount: { type: 'number' } } } },
         image: { type: 'string', format: 'binary' },
       },
+      required: ['name', 'ingredients'],
     },
   })
   @ApiResponse({ status: 201, description: 'Receita criada' })
-  create(@Body() createRecipeDto: CreateRecipeDto, @UploadedFile() image: Express.Multer.File) {
+  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  create(@Body() createRecipeDto: CreateRecipeDto, @UploadedFile() image?: Express.Multer.File) {
     return this.recipesService.create(createRecipeDto, image);
   }
 
@@ -44,17 +46,25 @@ export class RecipesController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Busca uma receita por ID' })
+  @ApiParam({ name: 'id', type: Number, description: 'ID da receita' })
   @ApiResponse({ status: 200, description: 'Receita encontrada' })
+  @ApiResponse({ status: 400, description: 'ID inválido' })
   @ApiResponse({ status: 404, description: 'Receita não encontrada' })
-  findOne(@Param('id') id: string) {
-    return this.recipesService.findOne(+id);
+  findOne(@Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number) {
+    return this.recipesService.findOne(id);
   }
 
   @Post(':id/execute')
   @ApiOperation({ summary: 'Executa uma receita e atualiza o estoque' })
-  @ApiBody({ schema: { type: 'object', properties: { servings: { type: 'number' } } } })
+  @ApiParam({ name: 'id', type: Number, description: 'ID da receita' })
+  @ApiBody({ schema: { type: 'object', properties: { servings: { type: 'number', minimum: 1 } } } })
   @ApiResponse({ status: 200, description: 'Receita executada' })
-  execute(@Param('id') id: string, @Body('servings') servings: number) {
-    return this.recipesService.executeRecipe(+id, servings);
+  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  execute(
+    @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
+    @Body('servings', new ParseIntPipe({ errorHttpStatusCode: 400 })) servings: number,
+  ) {
+    if (servings < 1) throw new BadRequestException('As porções devem ser pelo menos 1');
+    return this.recipesService.executeRecipe(id, servings);
   }
 }

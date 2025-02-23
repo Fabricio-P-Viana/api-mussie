@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Recipe } from './recipe.entity';
 import { Ingredient } from '../../ingredients/entities/ingredient.entity';
 
@@ -15,4 +15,10 @@ export class RecipeIngredient {
 
   @Column({ type: 'float' })
   amount: number;
+
+  @CreateDateColumn({ type: 'timestamp' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamp' })
+  updatedAt: Date;
 }

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -7,9 +7,10 @@ import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcrypt'; // ou bcryptjs
 import { MailService } from './mail.service';
 import { v4 as uuidv4 } from 'uuid';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -25,6 +26,9 @@ export class AuthService {
     const user = this.userRepository.create({
       email: registerDto.email,
       password: hashedPassword,
+      name: registerDto.name,
+      nameConfectionery: registerDto.nameConfectionery || null,
+      phone: registerDto.phone || null,
     });
     const savedUser = await this.userRepository.save(user);
     const payload = { email: savedUser.email, sub: savedUser.id };
@@ -73,10 +77,25 @@ export class AuthService {
     return { message: 'Senha redefinida com sucesso' };
   }
 
-  async uploadProfileImage(file: Express.Multer.File) {
-    const userId = 1; // Substitua por lógica para obter o ID do usuário autenticado
+  async uploadProfileImage(userId: number, file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('Imagem é obrigatória para este endpoint');
+    const user = await this.userRepository.findOneBy({ id: userId });
+    if (!user) throw new BadRequestException('Usuário não encontrado');
     const imagePath = `/uploads/${file.filename}`;
     await this.userRepository.update(userId, { profileImage: imagePath });
     return { imagePath };
+  }
+
+  async updateProfile(userId: number, updateUserDto: UpdateUserDto): Promise<User| null> {
+    const user = await this.userRepository.findOneBy({ id: userId });
+    if (!user) throw new BadRequestException('Usuário não encontrado');
+  
+    await this.userRepository.update(userId, {
+      name: updateUserDto.name || user.name,
+      nameConfectionery: updateUserDto.nameConfectionery ?? user.nameConfectionery,
+      phone: updateUserDto.phone ?? user.phone,
+    });
+  
+    return this.userRepository.findOneBy({ id: userId });
   }
 }
