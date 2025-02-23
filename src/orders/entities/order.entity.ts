@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Recipe } from '../../recipes/entities/recipe.entity';
+import { User } from '../../auth/entities/user.entity';
 
 @Entity()
 export class Order {
@@ -20,4 +21,7 @@ export class Order {
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
+
+  @ManyToOne(() => User, (user) => user.orders)
+  user: User; // Relacionamento com o usuário
 }

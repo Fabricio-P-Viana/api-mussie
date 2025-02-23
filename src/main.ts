@@ -6,15 +6,20 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors({ origin: 'http://localhost:3001' });
   const configService = app.get(ConfigService);
 
-  // Configuração do ValidationPipe com transformação e erros detalhados
+  app.enableCors({
+    origin: '*', // Permite qualquer origem
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Métodos permitidos
+    allowedHeaders: 'Content-Type, Authorization', // Headers permitidos
+    credentials: true, // Permite envio de cookies ou credenciais (se necessário)
+  });
+  
   app.useGlobalPipes(
     new ValidationPipe({
-      transform: true, // Transforma automaticamente os dados para o tipo do DTO
-      whitelist: true, // Remove propriedades não definidas no DTO
-      forbidNonWhitelisted: true, // Rejeita requisições com propriedades extras
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
       exceptionFactory: (errors) => {
         const messages = errors.map(error => ({
           property: error.property,
@@ -25,7 +30,6 @@ async function bootstrap() {
     }),
   );
 
-  // Configuração do Swagger (sem alterações)
   const config = new DocumentBuilder()
     .setTitle('Confeitaria API - Mossie')
     .setDescription('API para gerenciamento de estoque e pedidos de uma confeitaria')

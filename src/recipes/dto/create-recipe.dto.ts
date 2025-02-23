@@ -1,4 +1,4 @@
-import { IsString, IsNumber, Min, IsArray, ValidateNested } from 'class-validator';
+import { IsString, IsNumber, Min, IsArray, ValidateNested, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -21,8 +21,24 @@ export class CreateRecipeDto {
 
   @IsNumber({}, { message: 'As porções devem ser um número' })
   @Min(1, { message: 'As porções devem ser pelo menos 1' })
-  @ApiProperty({ description: 'Número de porções', example: 1, required: false })
-  servings?: number;
+  @ApiProperty({ description: 'Número de porções', example: 1 })
+  servings: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'O tempo de preparo deve ser um número' })
+  @Min(1, { message: 'O tempo de preparo deve ser pelo menos 1 minuto' })
+  @ApiProperty({ description: 'Tempo de preparo em minutos', example: 60, required: false })
+  preparationTime?: number;
+
+  @IsOptional()
+  @IsString({ message: 'A descrição deve ser uma string' })
+  @ApiProperty({ description: 'Descrição da receita', example: 'Um bolo delicioso de chocolate', required: false })
+  description?: string;
+
+  @IsNumber({}, { message: 'O preço deve ser um número' })
+  @Min(0, { message: 'O preço não pode ser negativo' })
+  @ApiProperty({ description: 'Preço da receita', example: 25.99 })
+  price: number;
 
   @IsArray({ message: 'Os ingredientes devem ser uma lista' })
   @ValidateNested({ each: true })

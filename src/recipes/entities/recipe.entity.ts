@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
 import { RecipeIngredient } from './recipe-ingredient.entity';
+import { User } from '../../auth/entities/user.entity';
 
 @Entity()
 export class Recipe {
@@ -15,6 +16,15 @@ export class Recipe {
   @Column({ nullable: true })
   image: string;
 
+  @Column({ type: 'int', nullable: true }) // Tempo de preparo em minutos
+  preparationTime: number | null;
+
+  @Column({ type: 'text', nullable: true }) // Descrição da receita
+  description: string | null;
+
+  @Column({ type: 'float' }) // Preço da receita (obrigatório)
+  price: number;
+
   @OneToMany(() => RecipeIngredient, (recipeIngredient) => recipeIngredient.recipe, { cascade: true })
   ingredients: RecipeIngredient[];
 
@@ -23,4 +33,7 @@ export class Recipe {
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
+
+  @ManyToOne(() => User, (user) => user.recipes)
+  user: User;
 }

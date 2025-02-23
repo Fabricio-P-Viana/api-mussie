@@ -1,5 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { Exclude } from 'class-transformer';
+import { Recipe } from '../../recipes/entities/recipe.entity';
+import { Order } from '../../orders/entities/order.entity';
 
 @Entity()
 export class User {
@@ -22,18 +24,27 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   profileImage: string | null;
 
-  @Column({ type: 'varchar' }) // Nome obrigatório
+  @Column({ type: 'varchar' })
   name: string;
 
-  @CreateDateColumn({ type: 'timestamp' }) // Criado automaticamente
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' }) // Atualizado automaticamente
+  @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
 
-  @Column({ type: 'varchar', nullable: true }) // Nome da confeitaria opcional
+  @Column({ type: 'varchar', nullable: true })
   nameConfectionery: string | null;
 
-  @Column({ type: 'varchar', nullable: true }) // Telefone opcional
+  @Column({ type: 'varchar', nullable: true })
   phone: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  refreshToken: string | null; // Novo campo para armazenar o refresh token
+
+  @OneToMany(() => Recipe, (recipe) => recipe.user)
+  recipes: Recipe[];
+
+  @OneToMany(() => Order, (order) => order.user)
+  orders: Order[];
 }

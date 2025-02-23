@@ -17,6 +17,15 @@ export class Ingredient {
   @Column({ type: 'float', default: 0 })
   variableWasteFactor: number;
 
+  @Column({ type: 'date' }) // Data de validade obrigatória
+  expirationDate: Date;
+
+  @Column({ type: 'varchar' }) // Unidade obrigatória
+  unity: string;
+
+  @Column({ type: 'varchar', nullable: true }) // Categoria permanece opcional
+  category: string | null;
+
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 

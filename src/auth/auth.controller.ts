@@ -5,10 +5,13 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto'; // Novo DTO
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiConsumes, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
+import { BadRequestException } from '@nestjs/common';
 import { UpdateUserDto } from './dto/update-user.dto';
+
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
@@ -69,7 +72,10 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Imagem enviada', type: Object })
   @ApiResponse({ status: 401, description: 'Não autorizado' })
   @ApiResponse({ status: 400, description: 'Arquivo de imagem ausente ou usuário inválido' })
-  uploadProfileImage(@CurrentUser() user: { userId: number; email: string }, @UploadedFile() file: Express.Multer.File) {
+  uploadProfileImage(
+    @CurrentUser() user: { userId: number; email: string },
+    @UploadedFile() file: Express.Multer.File,
+  ) {
     return this.authService.uploadProfileImage(user.userId, file);
   }
 
@@ -86,5 +92,14 @@ export class AuthController {
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.authService.updateProfile(user.userId, updateUserDto);
+  }
+
+  @Post('refresh-token')
+  @ApiOperation({ summary: 'Atualiza o access token usando o refresh token' })
+  @ApiBody({ type: RefreshTokenDto })
+  @ApiResponse({ status: 200, description: 'Tokens atualizados', type: Object })
+  @ApiResponse({ status: 401, description: 'Refresh token inválido ou expirado' })
+  refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
+    return this.authService.refreshToken(refreshTokenDto);
   }
 }

@@ -1,4 +1,4 @@
-import { IsNumber, Min, IsOptional } from 'class-validator';
+import { IsNumber, Min, IsOptional, IsDateString, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateIngredientDto {
@@ -19,4 +19,19 @@ export class UpdateIngredientDto {
   @Min(0, { message: 'O fator de perda variável não pode ser negativo' })
   @ApiProperty({ description: 'Fator de perda variável (percentual)', example: 0.02, required: false })
   variableWasteFactor?: number;
+
+  @IsOptional()
+  @IsDateString({}, { message: 'A data de validade deve ser uma data válida' })
+  @ApiProperty({ description: 'Data de validade do ingrediente', example: '2025-12-31', required: false })
+  expirationDate?: string;
+
+  @IsOptional()
+  @IsString({ message: 'A unidade deve ser uma string' })
+  @ApiProperty({ description: 'Unidade de medida', example: 'g', required: false })
+  unity?: string;
+
+  @IsOptional()
+  @IsString({ message: 'A categoria deve ser uma string' })
+  @ApiProperty({ description: 'Categoria do ingrediente', example: 'Doces', required: false })
+  category?: string;
 }

@@ -1,17 +1,17 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { IngredientsModule } from './ingredients/ingredients.module';
 import { RecipesModule } from './recipes/recipes.module';
 import { OrdersModule } from './orders/orders.module';
 import { AuthModule } from './auth/auth.module';
-// import { DataSource } from './database/data-source';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { DataSource } from './database/data-source';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // Torna o ConfigService disponível globalmente
-      envFilePath: '.env', // Caminho do arquivo .env
+      isGlobal: true,
+      envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -23,10 +23,10 @@ import { AuthModule } from './auth/auth.module';
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_DATABASE'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // Apenas para desenvolvimento
-        logging: true,
+        synchronize: true,
       }),
       inject: [ConfigService],
+      dataSourceFactory: async () => DataSource.initialize(),
     }),
     AuthModule,
     IngredientsModule,
