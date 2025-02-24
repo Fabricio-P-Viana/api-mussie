@@ -34,4 +34,9 @@ export class UpdateIngredientDto {
   @IsString({ message: 'A categoria deve ser uma string' })
   @ApiProperty({ description: 'Categoria do ingrediente', example: 'Doces', required: false })
   category?: string;
+
+  @IsNumber()
+  @IsOptional()
+  @ApiProperty({ description: 'Estoque mínimo', example: 100 })
+  minimumStock?: number;
 }

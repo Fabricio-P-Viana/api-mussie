@@ -1,4 +1,4 @@
-import { IsString, IsNumber, Min, IsDateString } from 'class-validator';
+import { IsString, IsNumber, Min, IsDateString, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateIngredientDto {
@@ -27,4 +27,8 @@ export class CreateIngredientDto {
   @IsString({ message: 'A categoria deve ser uma string' })
   @ApiProperty({ description: 'Categoria do ingrediente', example: 'Doces' })
   category: string;
+
+  @IsNumber()
+  @ApiProperty({ description: 'Estoque mínimo', example: 100 })
+  minimumStock: number;
 }

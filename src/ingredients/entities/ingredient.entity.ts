@@ -31,4 +31,7 @@ export class Ingredient {
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
+
+  @Column({ type: 'float' })
+  minimumStock: number;
 }
