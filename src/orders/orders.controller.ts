@@ -6,7 +6,7 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { PaginationPipe } from '../common/pipes/pagination.pipe';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { User } from 'src/auth/entities/user.entity';
+import { User } from 'src/users/entities/user.entity';
 
 @ApiTags('orders')
 @Controller('orders')
