@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { User } from 'src/users/entities/user.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
 
 @Entity()
 export class Ingredient {
@@ -34,4 +35,7 @@ export class Ingredient {
 
   @Column({ type: 'float' })
   minimumStock: number;
+
+  @ManyToOne(() => User, (user) => user.recipes)
+  user: User;
 }

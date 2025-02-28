@@ -5,7 +5,7 @@ import { Recipe } from './entities/recipe.entity';
 import { RecipeIngredient } from './entities/recipe-ingredient.entity';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
 import { IngredientsService } from '../ingredients/ingredients.service';
-import { User } from '../auth/entities/user.entity';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class RecipesService {
@@ -17,28 +17,32 @@ export class RecipesService {
     private ingredientsService: IngredientsService,
   ) {}
 
-  async create(createRecipeDto: CreateRecipeDto, image: Express.Multer.File | undefined, user: User): Promise<Recipe|null> {
+  async create(
+    createRecipeDto: CreateRecipeDto,
+    imagePath: string | undefined,
+    user: User
+  ): Promise<Recipe | null> {
     try {
       if (createRecipeDto.ingredients.length === 0) {
         throw new BadRequestException('A receita deve ter pelo menos um ingrediente');
       }
-
+  
       const recipe = this.recipeRepository.create({
         name: createRecipeDto.name,
         servings: createRecipeDto.servings,
-        image: image ? `/uploads/${image.filename}` : undefined,
+        image: imagePath, // Já recebemos o caminho pronto
         preparationTime: createRecipeDto.preparationTime,
         description: createRecipeDto.description,
         price: createRecipeDto.price,
         user,
       });
       const savedRecipe = await this.recipeRepository.save(recipe);
-
+  
       const recipeIngredients = await Promise.all(
         createRecipeDto.ingredients.map(async (ing) => {
           const ingredient = await this.ingredientsService.findOne(ing.ingredientId);
           if (!ingredient) throw new BadRequestException(`Ingrediente ${ing.ingredientId} não encontrado`);
-
+  
           const recipeIngredient = new RecipeIngredient();
           recipeIngredient.recipe = savedRecipe;
           recipeIngredient.ingredient = ingredient;
@@ -47,7 +51,7 @@ export class RecipesService {
         }),
       );
       await this.recipeIngredientRepository.save(recipeIngredients);
-
+  
       return await this.findOne(savedRecipe.id, user.id);
     } catch (error) {
       console.error('Erro ao criar receita:', error);
