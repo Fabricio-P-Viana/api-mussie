@@ -6,6 +6,7 @@ import { UpdateIngredientDto } from './dto/update-ingredient.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth, ApiParam, ApiBody } from '@nestjs/swagger';
 import { PaginationPipe } from '../common/pipes/pagination.pipe';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('ingredients')
 @Controller('ingredients')
@@ -24,12 +25,15 @@ export class IngredientsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lista todos os ingredientes com paginação' })
+  @ApiOperation({ summary: 'Lista todos os ingredientes do usuário autenticado com paginação' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (padrão: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página (padrão: 10)' })
-  @ApiResponse({ status: 200, description: 'Lista de ingredientes' })
-  async findAll(@Query(new PaginationPipe()) pagination: { skip: number; take: number }) {
-    const result = await this.ingredientsService.findAll(pagination);
+  @ApiResponse({ status: 200, description: 'Lista de ingredientes do usuário' })
+  async findAll(
+    @Query(new PaginationPipe()) pagination: { skip: number; take: number },
+    @CurrentUser() user: { userId: number; email: string }, // Extrai userId do token
+  ) {
+    const result = await this.ingredientsService.findAll(pagination, user.userId); // Passa userId
     return { success: true, data: result };
   }
 
