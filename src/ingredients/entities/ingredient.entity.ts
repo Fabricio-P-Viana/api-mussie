@@ -36,6 +36,6 @@ export class Ingredient {
   @Column({ type: 'float' })
   minimumStock: number;
 
-  @ManyToOne(() => User, (user) => user.recipes)
+  @ManyToOne(() => User, (user) => user.ingredient)
   user: User;
 }

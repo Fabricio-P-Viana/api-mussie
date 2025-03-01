@@ -76,7 +76,7 @@ export class AuthService {
     }
   }
 
-  async login(loginDto: LoginDto): Promise<{ access_token: string; refresh_token: string }> {
+  async login(loginDto: LoginDto): Promise<{ access_token: string; refresh_token: string; user_id: number }> {
     try {
       const user = await this.userRepository.findOneBy({ email: loginDto.email });
       if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
@@ -86,7 +86,7 @@ export class AuthService {
       const accessToken = this.jwtService.sign(payload);
       const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
       await this.userRepository.update(user.id, { refreshToken });
-      return { access_token: accessToken, refresh_token: refreshToken };
+      return { access_token: accessToken, refresh_token: refreshToken, user_id: user.id };
     } catch (error) {
       console.error('Erro ao fazer login:', error);
       if (error instanceof UnauthorizedException) throw error;

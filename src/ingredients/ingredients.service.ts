@@ -12,11 +12,12 @@ export class IngredientsService {
     private ingredientRepository: Repository<Ingredient>,
   ) {}
 
-  async create(createIngredientDto: CreateIngredientDto): Promise<Ingredient> {
+  async create(createIngredientDto: CreateIngredientDto, userId: number): Promise<Ingredient> {
     try {
       console.log('Criando ingrediente com DTO:', createIngredientDto);
       const ingredient = this.ingredientRepository.create({
         ...createIngredientDto,
+        user: { id: userId },
         expirationDate: new Date(createIngredientDto.expirationDate),
       });
       const savedIngredient = await this.ingredientRepository.save(ingredient);
@@ -28,7 +29,6 @@ export class IngredientsService {
       throw new InternalServerErrorException('Erro ao salvar ingrediente no banco');
     }
   }
-
   async findAll(pagination: { skip: number; take: number }, userId: number): Promise<{ data: Ingredient[]; total: number }> {
     try {
       const [data, total] = await this.ingredientRepository.findAndCount({
