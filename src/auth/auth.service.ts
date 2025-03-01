@@ -143,8 +143,9 @@ export class AuthService {
       if (!file) throw new BadRequestException('Imagem é obrigatória para este endpoint');
       const user = await this.userRepository.findOneBy({ id: userId });
       if (!user) throw new BadRequestException('Usuário não encontrado');
-      const imagePath = `/uploads/${file.filename}`;
+      const imagePath = `/uploads/${file.filename}`; // Caminho relativo
       await this.userRepository.update(userId, { profileImage: imagePath });
+      console.log('Imagem de perfil salva para o usuário', userId, 'em:', imagePath); // Log para depuração
       return { imagePath };
     } catch (error) {
       console.error('Erro ao fazer upload da imagem de perfil:', error);
@@ -193,6 +194,18 @@ export class AuthService {
       console.error('Erro ao renovar token:', error);
       if (error instanceof UnauthorizedException) throw error;
       throw new InternalServerErrorException('Erro ao renovar token');
+    }
+  }
+
+  async getUserProfile(userId: number) {
+    try {
+      const user = await this.userRepository.findOneBy({ id: userId });
+      if (!user) throw new BadRequestException('Usuário não encontrado');
+      return user;
+    } catch (error) {
+      console.error('Erro ao buscar perfil do usuário:', error);
+      if (error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException('Erro ao buscar perfil do usuário');
     }
   }
 }
