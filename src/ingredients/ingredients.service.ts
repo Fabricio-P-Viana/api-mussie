@@ -29,11 +29,13 @@ export class IngredientsService {
     }
   }
 
-  async findAll(pagination: { skip: number; take: number }): Promise<{ data: Ingredient[]; total: number }> {
+  async findAll(pagination: { skip: number; take: number }, userId: number): Promise<{ data: Ingredient[]; total: number }> {
     try {
       const [data, total] = await this.ingredientRepository.findAndCount({
+        where: { user: { id: userId } }, // Filtra pelo userId
         skip: pagination.skip,
         take: pagination.take,
+        relations: ['user'], // Inclui o relacionamento com User, se necessário
       });
       return { data, total };
     } catch (error) {
