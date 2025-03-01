@@ -11,6 +11,8 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { BadRequestException } from '@nestjs/common';
 import { UpdateUserDto } from '../users/dto/update-user.dto';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -56,8 +58,25 @@ export class AuthController {
 
   @Post('upload-profile-image')
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FileInterceptor('image'))
-  @ApiOperation({ summary: 'Faz upload da imagem de perfil' })
+  @UseInterceptors(FileInterceptor('image', {
+    storage: diskStorage({
+      destination: './uploads', // Mesmo diretório usado para receitas
+      filename: (req, file, callback) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname);
+        callback(null, `${uniqueSuffix}${ext}`);
+      },
+    }),
+    fileFilter: (req, file, callback) => {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(file.mimetype)) {
+        return callback(new BadRequestException('Apenas arquivos de imagem são permitidos (JPEG, PNG, GIF)'), false);
+      }
+      callback(null, true);
+    },
+    limits: { fileSize: 5 * 1024 * 1024 }, // Limite de 5MB
+  }))
+  @ApiOperation({ summary: 'Faz upload da imagem de perfil do usuário autenticado' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
