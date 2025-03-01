@@ -19,8 +19,10 @@ export class IngredientsController {
   @ApiOperation({ summary: 'Cria um novo ingrediente' })
   @ApiResponse({ status: 201, description: 'Ingrediente criado' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
-  async create(@Body() createIngredientDto: CreateIngredientDto) {
-    const ingredient = await this.ingredientsService.create(createIngredientDto);
+  async create(@Body() createIngredientDto: CreateIngredientDto,
+  @CurrentUser() user: { userId: number; email: string }) {
+
+    const ingredient = await this.ingredientsService.create(createIngredientDto,user.userId);
     return { success: true, data: ingredient };
   }
 
