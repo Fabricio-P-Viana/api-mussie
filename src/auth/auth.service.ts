@@ -53,6 +53,10 @@ export class AuthService {
 
   async register(registerDto: RegisterDto): Promise<{ access_token: string; refresh_token: string }> {
     try {
+      const userExists = await this.userRepository.findOneBy({ email: registerDto.email });
+
+      if (userExists) throw new BadRequestException('E-mail já registrado');
+      
       const hashedPassword = await bcrypt.hash(registerDto.password, 10);
       const user = this.userRepository.create({
         email: registerDto.email,

@@ -3,6 +3,11 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateIngredientDto {
   @IsOptional()
+  @IsString({ message: 'O nome deve ser uma string' })
+  @ApiProperty({ description: 'Nome do ingrediente', example: 'Farinha', required: false })
+  name?: string;
+
+  @IsOptional()
   @IsNumber({}, { message: 'O estoque deve ser um número' })
   @Min(0, { message: 'O estoque não pode ser negativo' })
   @ApiProperty({ description: 'Quantidade em estoque', example: 1500, required: false })
@@ -35,8 +40,15 @@ export class UpdateIngredientDto {
   @ApiProperty({ description: 'Categoria do ingrediente', example: 'Doces', required: false })
   category?: string;
 
-  @IsNumber()
   @IsOptional()
-  @ApiProperty({ description: 'Estoque mínimo', example: 100 })
+  @IsNumber({}, { message: 'O estoque mínimo deve ser um número' })
+  @Min(0, { message: 'O estoque mínimo não pode ser negativo' })
+  @ApiProperty({ description: 'Estoque mínimo', example: 100, required: false })
   minimumStock?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'O preço deve ser um número' })
+  @Min(0, { message: 'O preço não pode ser negativo' })
+  @ApiProperty({ description: 'Preço do ingrediente (em reais)', example: 10.5, required: false })
+  price?: number;
 }
