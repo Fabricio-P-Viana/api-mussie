@@ -18,23 +18,26 @@ export class Ingredient {
   @Column({ type: 'float', default: 0 })
   variableWasteFactor: number;
 
-  @Column({ type: 'date' }) // Data de validade obrigatória
+  @Column({ type: 'date' })
   expirationDate: Date;
 
-  @Column({ type: 'varchar' }) // Unidade obrigatória
+  @Column({ type: 'varchar' })
   unity: string;
 
-  @Column({ type: 'varchar', nullable: true }) // Categoria permanece opcional
+  @Column({ type: 'varchar', nullable: true })
   category: string | null;
+
+  @Column({ type: 'float', default: 0 })
+  minimumStock: number;
+
+  @Column({ type: 'float', default: 0 }) // Novo campo para preço
+  price: number;
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
-
-  @Column({ type: 'float' })
-  minimumStock: number;
 
   @ManyToOne(() => User, (user) => user.ingredient)
   user: User;

@@ -11,7 +11,6 @@ export class IngredientsService {
     @InjectRepository(Ingredient)
     private ingredientRepository: Repository<Ingredient>,
   ) {}
-
   async create(createIngredientDto: CreateIngredientDto, userId: number): Promise<Ingredient> {
     try {
       console.log('Criando ingrediente com DTO:', createIngredientDto);
@@ -19,13 +18,17 @@ export class IngredientsService {
         ...createIngredientDto,
         user: { id: userId },
         expirationDate: new Date(createIngredientDto.expirationDate),
+        price: createIngredientDto.price || 0,
       });
       const savedIngredient = await this.ingredientRepository.save(ingredient);
       console.log('Ingrediente salvo:', savedIngredient);
       return savedIngredient;
     } catch (error) {
       console.error('Erro ao criar ingrediente:', error);
-      if (error instanceof BadRequestException) throw error;
+      if (error instanceof BadRequestException) {
+        console.error('Detalhes do erro de validação:', error.message);
+        throw error;
+      }
       throw new InternalServerErrorException('Erro ao salvar ingrediente no banco');
     }
   }
