@@ -1,10 +1,11 @@
-import { IsNumber, Min, IsOptional, IsString, IsDateString } from 'class-validator';
+import { IsNumber, Min, IsOptional, IsString, IsDateString, IsArray, ValidateNested } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
-export class CreateOrderDto {
+class RecipeOrderInput {
   @IsNumber({}, { message: 'O ID da receita deve ser um número' })
   @Min(1, { message: 'O ID da receita deve ser maior que 0' })
-  @ApiProperty({ description: 'ID da receita associada', example: 1 })
+  @ApiProperty({ description: 'ID da receita', example: 1 })
   recipeId: number;
 
   @IsNumber({}, { message: 'As porções devem ser um número' })
@@ -15,16 +16,18 @@ export class CreateOrderDto {
   @IsOptional()
   @IsNumber({}, { message: 'O preço extra deve ser um número' })
   @Min(0, { message: 'O preço extra não pode ser negativo' })
-  @ApiProperty({ description: 'Preço extra do pedido', example: 5.99, required: false })
+  @ApiProperty({ description: 'Preço extra', example: 5.99, required: false })
   extraPrice?: number;
 
   @IsOptional()
   @IsString({ message: 'As observações devem ser uma string' })
-  @ApiProperty({ description: 'Observações do pedido', example: 'Entregar no portão', required: false })
+  @ApiProperty({ description: 'Observações', example: 'Sem açúcar', required: false })
   observations?: string;
-
-  @IsOptional()
-  @IsDateString({}, { message: 'A data de entrega deve ser uma data válida' })
-  @ApiProperty({ description: 'Data de entrega do pedido', example: '2025-03-01', required: false })
-  deliveryDate?: string;
+}
+export class CreateOrderDto {
+  @IsArray({ message: 'As receitas devem ser uma lista' })
+  @ValidateNested({ each: true })
+  @Type(() => RecipeOrderInput)
+  @ApiProperty({ description: 'Lista de receitas no pedido', type: [RecipeOrderInput] })
+  recipes: RecipeOrderInput[];
 }

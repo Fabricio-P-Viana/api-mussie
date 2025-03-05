@@ -6,6 +6,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { RecipesService } from '../recipes/recipes.service';
 import { User } from '../users/entities/user.entity';
+import { OrderRecipe } from './entities/order-recipe.entity';
 
 @Injectable()
 export class OrdersService {
@@ -15,21 +16,29 @@ export class OrdersService {
     private recipesService: RecipesService,
   ) {}
 
-  async create(createOrderDto: CreateOrderDto, user: User): Promise<Order> {
+  async create(createOrderDto: CreateOrderDto, user: User): Promise<Order|null> {
     try {
-      const recipe = await this.recipesService.findOne(createOrderDto.recipeId, user.id);
-      if (!recipe) throw new BadRequestException('Receita não encontrada ou não pertence ao usuário');
-
-      const order = this.orderRepository.create({
-        recipe,
-        servings: createOrderDto.servings,
-        extraPrice: createOrderDto.extraPrice,
-        observations: createOrderDto.observations,
-        deliveryDate: createOrderDto.deliveryDate ? new Date(createOrderDto.deliveryDate) : null,
-        user,
-      } as any);
+      const order = this.orderRepository.create({ user });
       const savedOrder = await this.orderRepository.save(order);
-      return Array.isArray(savedOrder) ? savedOrder[0] : savedOrder;
+  
+      const orderRecipes = await Promise.all(
+        createOrderDto.recipes.map(async (recipeInput) => {
+          const recipe = await this.recipesService.findOne(recipeInput.recipeId, user.id);
+          if (!recipe) throw new BadRequestException(`Receita ${recipeInput.recipeId} não encontrada`);
+          
+          return {
+            order: savedOrder,
+            recipe,
+            servings: recipeInput.servings,
+            extraPrice: recipeInput.extraPrice,
+            observations: recipeInput.observations,
+            status: 'pending',
+          } as OrderRecipe;
+        }),
+      );
+  
+      await this.orderRepository.manager.getRepository(OrderRecipe).save(orderRecipes);
+      return this.findOne(savedOrder.id, user.id);
     } catch (error) {
       console.error('Erro ao criar pedido:', error);
       if (error instanceof BadRequestException) throw error;
@@ -37,53 +46,49 @@ export class OrdersService {
     }
   }
 
+  async findOne(id: number, userId: number): Promise<Order> {
+    const order = await this.orderRepository.findOne({
+      where: { id, user: { id: userId } },
+      relations: ['orderRecipes', 'orderRecipes.recipe'],
+    });
+    if (!order) throw new BadRequestException('Pedido não encontrado');
+    return order;
+  }
+  
   async findAll(pagination: { skip: number; take: number }, userId: number): Promise<{ data: Order[]; total: number }> {
-    try {
-      const [data, total] = await this.orderRepository.findAndCount({
-        where: { user: { id: userId } },
-        skip: pagination.skip,
-        take: pagination.take,
-        relations: ['recipe'],
-      });
-      return { data, total };
-    } catch (error) {
-      console.error('Erro ao listar pedidos:', error);
-      throw new InternalServerErrorException('Erro ao buscar pedidos');
-    }
+    const [data, total] = await this.orderRepository.findAndCount({
+      where: { user: { id: userId } },
+      relations: ['orderRecipes', 'orderRecipes.recipe'],
+      skip: pagination.skip,
+      take: pagination.take,
+    });
+    return { data, total };
   }
 
-  async findOne(id: number, userId: number): Promise<Order | null> {
-    try {
-      const order = await this.orderRepository.findOne({
-        where: { id, user: { id: userId } },
-        relations: ['recipe'],
-      });
-      if (!order) {
-        throw new BadRequestException(`Pedido com ID ${id} não encontrado ou não pertence ao usuário`);
-      }
-      return order;
-    } catch (error) {
-      console.error('Erro ao buscar pedido:', error);
-      if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException('Erro ao buscar pedido');
-    }
-  }
-
-  async update(id: number, updateOrderDto: UpdateOrderDto, userId: number): Promise<Order | null> {
+  async update(id: number, updateOrderDto: UpdateOrderDto, userId: number): Promise<Order|null> {
     try {
       const order = await this.findOne(id, userId);
-      if (!order) throw new BadRequestException('Pedido não encontrado ou não pertence ao usuário');
-
-      if (updateOrderDto.status === 'completed' && order.status !== 'completed') {
-        await this.recipesService.executeRecipe(order.recipe.id, order.servings, userId);
+      if (!order) throw new BadRequestException('Pedido não encontrado');
+  
+      if (updateOrderDto.status) {
+        order.status = updateOrderDto.status;
+        await this.orderRepository.save(order);
       }
-
-      const updateData = {
-        ...updateOrderDto,
-        deliveryDate: updateOrderDto.deliveryDate ? new Date(updateOrderDto.deliveryDate) : undefined,
-      };
-      await this.orderRepository.update(id, updateData);
-      return await this.findOne(id, userId);
+  
+      if (updateOrderDto.recipeUpdates?.length) {
+        for (const update of updateOrderDto.recipeUpdates) {
+          const orderRecipe = order.orderRecipes.find(or => or.recipe.id === update.recipeId);
+          if (!orderRecipe) throw new BadRequestException(`Receita ${update.recipeId} não encontrada no pedido`);
+          
+          orderRecipe.status = update.status;
+          if (update.status === 'completed' && orderRecipe.status !== 'completed') {
+            await this.recipesService.executeRecipe(orderRecipe.recipe.id, orderRecipe.servings, userId);
+          }
+          await this.orderRepository.manager.getRepository(OrderRecipe).save(orderRecipe);
+        }
+      }
+  
+      return this.findOne(id, userId);
     } catch (error) {
       console.error('Erro ao atualizar pedido:', error);
       if (error instanceof BadRequestException) throw error;

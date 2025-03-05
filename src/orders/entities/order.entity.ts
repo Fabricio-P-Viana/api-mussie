@@ -1,20 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Recipe } from '../../recipes/entities/recipe.entity';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
+import { OrderRecipe } from './order-recipe.entity';
 
 @Entity()
 export class Order {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Recipe)
-  recipe: Recipe;
-
-  @Column()
-  servings: number;
+  @OneToMany(() => OrderRecipe, (orderRecipe) => orderRecipe.order, { cascade: true })
+  orderRecipes: OrderRecipe[]; // Novo relacionamento
 
   @Column({ default: 'pending' })
-  status: 'pending' | 'completed' | 'canceled';
+  status: 'pending' | 'completed' | 'canceled'; // Status geral do pedido
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
@@ -23,5 +20,5 @@ export class Order {
   updatedAt: Date;
 
   @ManyToOne(() => User, (user) => user.orders)
-  user: User; // Relacionamento com o usuário
+  user: User;
 }
