@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
 import { RecipeIngredient } from './recipe-ingredient.entity';
 import { User } from '../../users/entities/user.entity';
+import { OrderRecipe } from 'src/orders/entities/order-recipe.entity';
 
 @Entity()
 export class Recipe {
@@ -36,4 +37,7 @@ export class Recipe {
 
   @ManyToOne(() => User, (user) => user.recipes)
   user: User;
+
+  @OneToMany(() => OrderRecipe, (orderRecipe) => orderRecipe.recipe)
+  orderRecipes: OrderRecipe[];
 }
