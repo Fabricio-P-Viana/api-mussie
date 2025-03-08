@@ -16,34 +16,32 @@ export class OrdersService {
     private recipesService: RecipesService,
   ) {}
 
-  async create(createOrderDto: CreateOrderDto, user: User): Promise<Order|null> {
-    try {
-      const order = this.orderRepository.create({ user });
-      const savedOrder = await this.orderRepository.save(order);
+  async create(createOrderDto: CreateOrderDto, user: User): Promise<Order | null> {
+    const order = this.orderRepository.create({ user });
+    const savedOrder = await this.orderRepository.save(order);
   
-      const orderRecipes = await Promise.all(
-        createOrderDto.recipes.map(async (recipeInput) => {
-          const recipe = await this.recipesService.findOne(recipeInput.recipeId, user.id);
-          if (!recipe) throw new BadRequestException(`Receita ${recipeInput.recipeId} não encontrada`);
-          
-          return {
-            order: savedOrder,
-            recipe,
-            servings: recipeInput.servings,
-            extraPrice: recipeInput.extraPrice,
-            observations: recipeInput.observations,
-            status: 'pending',
-          } as OrderRecipe;
-        }),
-      );
+    let totalCost = 0;
+    const orderRecipes = await Promise.all(
+      createOrderDto.recipes.map(async (recipeInput) => {
+        const recipe = await this.recipesService.findOne(recipeInput.recipeId, user.id);
+        if (!recipe) throw new BadRequestException(`Receita ${recipeInput.recipeId} não encontrada`);
   
-      await this.orderRepository.manager.getRepository(OrderRecipe).save(orderRecipes);
-      return this.findOne(savedOrder.id, user.id);
-    } catch (error) {
-      console.error('Erro ao criar pedido:', error);
-      if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException('Erro ao criar pedido');
-    }
+        const recipeCost = recipe.cost * recipeInput.servings;
+        totalCost += recipeCost;
+  
+        return {
+          order: savedOrder,
+          recipe,
+          servings: recipeInput.servings,
+          extraPrice: recipeInput.extraPrice,
+          observations: recipeInput.observations,
+          status: 'pending',
+        } as OrderRecipe;
+      }),
+    );
+  
+    await this.orderRepository.manager.getRepository(OrderRecipe).save(orderRecipes);
+    return this.findOne(savedOrder.id, user.id);
   }
 
   async findOne(id: number, userId: number): Promise<Order> {

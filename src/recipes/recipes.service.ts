@@ -6,6 +6,7 @@ import { RecipeIngredient } from './entities/recipe-ingredient.entity';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
 import { IngredientsService } from '../ingredients/ingredients.service';
 import { User } from '../users/entities/user.entity';
+import { TransactionType } from 'src/ingredients/entities/stock-transaction.entity';
 
 @Injectable()
 export class RecipesService {
@@ -17,47 +18,50 @@ export class RecipesService {
     private ingredientsService: IngredientsService,
   ) {}
 
-  async create(
-    createRecipeDto: CreateRecipeDto,
-    imagePath: string | undefined,
-    user: User
-  ): Promise<Recipe | null> {
-    try {
-      if (createRecipeDto.ingredients.length === 0) {
-        throw new BadRequestException('A receita deve ter pelo menos um ingrediente');
-      }
+  async create(createRecipeDto: CreateRecipeDto, imagePath: string | undefined, user: User): Promise<Recipe | null> {
+    const recipe = this.recipeRepository.create({
+      name: createRecipeDto.name,
+      servings: createRecipeDto.servings,
+      image: imagePath,
+      preparationTime: createRecipeDto.preparationTime,
+      description: createRecipeDto.description,
+      price: createRecipeDto.price,
+      user,
+      cost: 0, // Inicializa como 0, será calculado abaixo
+    });
+    const savedRecipe = await this.recipeRepository.save(recipe);
   
-      const recipe = this.recipeRepository.create({
-        name: createRecipeDto.name,
-        servings: createRecipeDto.servings,
-        image: imagePath, // Já recebemos o caminho pronto
-        preparationTime: createRecipeDto.preparationTime,
-        description: createRecipeDto.description,
-        price: createRecipeDto.price,
-        user,
-      });
-      const savedRecipe = await this.recipeRepository.save(recipe);
+    const recipeIngredients = await Promise.all(
+      createRecipeDto.ingredients.map(async (ing) => {
+        const ingredient = await this.ingredientsService.findOne(ing.ingredientId);
+        if (!ingredient) throw new BadRequestException(`Ingrediente ${ing.ingredientId} não encontrado`);
   
-      const recipeIngredients = await Promise.all(
-        createRecipeDto.ingredients.map(async (ing) => {
-          const ingredient = await this.ingredientsService.findOne(ing.ingredientId);
-          if (!ingredient) throw new BadRequestException(`Ingrediente ${ing.ingredientId} não encontrado`);
+        const recipeIngredient = new RecipeIngredient();
+        recipeIngredient.recipe = savedRecipe;
+        recipeIngredient.ingredient = ingredient;
+        recipeIngredient.amount = ing.amount;
+        return recipeIngredient;
+      }),
+    );
+    await this.recipeIngredientRepository.save(recipeIngredients);
   
-          const recipeIngredient = new RecipeIngredient();
-          recipeIngredient.recipe = savedRecipe;
-          recipeIngredient.ingredient = ingredient;
-          recipeIngredient.amount = ing.amount;
-          return recipeIngredient;
-        }),
-      );
-      await this.recipeIngredientRepository.save(recipeIngredients);
+    const updatedRecipe = await this.findOne(savedRecipe.id, user.id);
+    if(!updatedRecipe) return null
+    updatedRecipe.cost = await this.calculateRecipeCost(updatedRecipe);
+    await this.recipeRepository.save(updatedRecipe);
   
-      return await this.findOne(savedRecipe.id, user.id);
-    } catch (error) {
-      console.error('Erro ao criar receita:', error);
-      if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException('Erro ao criar receita');
+    return updatedRecipe;
+  }
+  
+  async calculateRecipeCost(recipe: Recipe): Promise<number> {
+    let totalCost = 0;
+    for (const recipeIngredient of recipe.ingredients) {
+      const ingredient = recipeIngredient.ingredient;
+      const amountInBaseUnit = recipeIngredient.amount; // Assumindo que a unidade já está convertida
+      const costPerUnit = ingredient.price; // Preço por unidade base (ex.: R$/kg)
+      totalCost += (amountInBaseUnit / 1000) * costPerUnit; // Converte para base (ex.: g para kg)
     }
+    return totalCost / recipe.servings; // Custo por porção
   }
 
   async findAll(pagination: { skip: number; take: number }, userId: number): Promise<{ data: Recipe[]; total: number }> {
@@ -93,33 +97,33 @@ export class RecipesService {
   }
 
   async executeRecipe(recipeId: number, servings: number, userId: number) {
-    try {
-      const recipe = await this.findOne(recipeId, userId);
-      if (!recipe) throw new BadRequestException('Receita não encontrada ou não pertence ao usuário');
+    const recipe = await this.findOne(recipeId, userId);
+    if (!recipe) throw new BadRequestException('Receita não encontrada ou não pertence ao usuário');
 
-      const factor = servings / recipe.servings;
+    const factor = servings / recipe.servings;
 
-      for (const recipeIngredient of recipe.ingredients) {
-        const ingredient = await this.ingredientsService.findOne(recipeIngredient.ingredient.id);
-        if (!ingredient) throw new BadRequestException(`Ingrediente ${recipeIngredient.ingredient.id} não encontrado`);
+    for (const recipeIngredient of recipe.ingredients) {
+      
+      const ingredient = await this.ingredientsService.findOne(recipeIngredient.ingredient.id);
+      if(ingredient === null) return
+      const baseAmount = recipeIngredient.amount * factor;
+      const fixedWaste = baseAmount * ingredient.fixedWasteFactor;
+      const variableWaste = baseAmount * ingredient.variableWasteFactor;
+      const realConsumption = baseAmount + fixedWaste + variableWaste;
 
-        const baseAmount = recipeIngredient.amount * factor;
-        const fixedWaste = baseAmount * ingredient.fixedWasteFactor;
-        const variableWaste = baseAmount * ingredient.variableWasteFactor;
-        const realConsumption = baseAmount + fixedWaste + variableWaste;
-
-        if (ingredient.stock < realConsumption) {
-          throw new BadRequestException(`Estoque insuficiente para ${ingredient.name}: ${ingredient.stock} disponível, ${realConsumption} necessário`);
-        }
-
-        ingredient.stock -= realConsumption;
-        await this.ingredientsService.update(ingredient.id, { stock: ingredient.stock });
+      if (ingredient.stock < realConsumption) {
+        throw new BadRequestException(`Estoque insuficiente para ${ingredient.name}`);
       }
-      return { message: 'Receita executada e estoque atualizado' };
-    } catch (error) {
-      console.error('Erro ao executar receita:', error);
-      if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException('Erro ao executar receita');
+
+      ingredient.stock -= realConsumption;
+      await this.ingredientsService.update(ingredient.id, { stock: ingredient.stock });
+      await this.ingredientsService.recordStockTransaction(
+        ingredient.id,
+        TransactionType.EXIT,
+        realConsumption,
+        `Consumo na execução da receita ${recipe.name}`,
+      );
     }
+    return { message: 'Receita executada e estoque atualizado' };
   }
 }

@@ -11,6 +11,9 @@ export class Recipe {
   @Column()
   name: string;
 
+  @Column({ type: 'float', default: 0 })
+  cost: number;
+
   @Column({ default: 1 })
   servings: number;
 

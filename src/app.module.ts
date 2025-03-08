@@ -10,6 +10,7 @@ import { OrdersModule } from './orders/orders.module';
 import { UsersModule } from './users/users.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { ReportsModule } from './reports/reports.module';
 import * as path from 'path';
 
 @Module({
@@ -39,6 +40,7 @@ import * as path from 'path';
     OrdersModule,
     UsersModule,
     UploadsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
