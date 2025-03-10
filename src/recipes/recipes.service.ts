@@ -101,6 +101,8 @@ export class RecipesService {
     if (!recipe) throw new BadRequestException('Receita não encontrada ou não pertence ao usuário');
 
     const factor = servings / recipe.servings;
+    console.log('Fator de conversão:', factor);
+    
 
     for (const recipeIngredient of recipe.ingredients) {
       
@@ -110,7 +112,10 @@ export class RecipesService {
       const fixedWaste = baseAmount * ingredient.fixedWasteFactor;
       const variableWaste = baseAmount * ingredient.variableWasteFactor;
       const realConsumption = baseAmount + fixedWaste + variableWaste;
-
+      console.log(`Consumo real de ${ingredient.name}: ${realConsumption}`);
+      console.log(`Estoque atual de ${ingredient.name}: ${ingredient.stock}`);;
+      
+      
       if (ingredient.stock < realConsumption) {
         throw new BadRequestException(`Estoque insuficiente para ${ingredient.name}`);
       }

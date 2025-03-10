@@ -54,7 +54,6 @@ export class IngredientsService {
         skip: pagination.skip,
         take: pagination.take,
       });
-      console.log('getStockHistory - Paginação:', pagination, 'Total:', total, 'Dados:', data);
       return { data, total };
     } catch (error) {
       console.error('Erro ao listar histórico:', error);

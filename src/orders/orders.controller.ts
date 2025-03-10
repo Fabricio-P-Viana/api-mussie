@@ -63,4 +63,11 @@ export class OrdersController {
   ) {
     return this.ordersService.update(id, updateOrderDto, user.userId);
   }
+
+  @Get('pending')
+  @ApiOperation({ summary: 'Obtém pedidos pendentes ordenados por data de entrega' })
+  @ApiResponse({ status: 200, description: 'Lista de pedidos pendentes' })
+  getPendingOrders(@CurrentUser() user: { userId: number; email: string }) {    
+    return this.ordersService.getPendingOrders(user.userId);
+  }
 }

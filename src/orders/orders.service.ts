@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, LessThanOrEqual, Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
@@ -35,6 +35,7 @@ export class OrdersService {
           servings: recipeInput.servings,
           extraPrice: recipeInput.extraPrice,
           observations: recipeInput.observations,
+          unitPrice: recipe.price || 0,
           status: 'pending',
         } as OrderRecipe;
       }),
@@ -92,5 +93,22 @@ export class OrdersService {
       if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException('Erro ao atualizar pedido');
     }
+  }
+
+  async getPendingOrders(userId: number): Promise<Order[]> {
+    const currentDate = new Date();
+    return this.orderRepository.find({
+      where: {
+        user: { id: userId },
+        deliveryDate: LessThanOrEqual(currentDate),
+        orderRecipes: {
+          status: In(['pending', 'in_progress']),
+        },
+      },
+      relations: ['orderRecipes', 'orderRecipes.recipe'],
+      order: {
+        deliveryDate: 'ASC',
+      },
+    });
   }
 }

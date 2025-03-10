@@ -1,4 +1,3 @@
-// src/orders/entities/order-recipe.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Order } from './order.entity';
 import { Recipe } from '../../recipes/entities/recipe.entity';
@@ -15,20 +14,23 @@ export class OrderRecipe {
   recipe: Recipe;
 
   @Column({ type: 'int' })
-  servings: number; // Quantidade de porções dessa receita no pedido
+  servings: number; 
 
   @Column({ default: 'pending' })
-  status: 'pending' | 'in_progress' | 'completed' | 'canceled'; // Status específico da receita no pedido
+  status: 'pending' | 'in_progress' | 'completed' | 'canceled'; 
 
   @Column({ type: 'float', nullable: true })
-  extraPrice: number | null; // Preço extra específico para essa receita (opcional)
+  extraPrice: number | null;
 
   @Column({ type: 'text', nullable: true })
-  observations: string | null; // Observações específicas para essa receita
+  observations: string | null;
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
+
+  @Column({ type: 'decimal' })
+  unitPrice: number;
 }
