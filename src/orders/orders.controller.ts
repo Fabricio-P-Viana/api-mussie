@@ -38,6 +38,19 @@ export class OrdersController {
     return this.ordersService.findAll(pagination, user.userId);
   }
 
+  @Get('pending')
+  @ApiOperation({ summary: 'Obtém pedidos pendentes ordenados por data de entrega' })
+  @ApiResponse({ status: 200, description: 'Lista de pedidos pendentes' })
+  @ApiQuery({ name: 'startDate', required: false, type: Date, description: 'Data inicial (default: primeiro dia do mês atual)' })
+  @ApiQuery({ name: 'endDate', required: false, type: Date, description: 'Data final (default: último dia do mês atual)' })
+  findPendingOrders(
+    @CurrentUser() user: { userId: number; email: string },
+    @Query('startDate') startDate?: Date,
+    @Query('endDate') endDate?: Date
+  ) {
+    return this.ordersService.findPendingOrders(user.userId, startDate, endDate);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Busca um pedido do usuário por ID' })
   @ApiParam({ name: 'id', type: Number, description: 'ID do pedido' })
@@ -62,12 +75,5 @@ export class OrdersController {
     @CurrentUser() user: { userId: number; email: string },
   ) {
     return this.ordersService.update(id, updateOrderDto, user.userId);
-  }
-
-  @Get('pending')
-  @ApiOperation({ summary: 'Obtém pedidos pendentes ordenados por data de entrega' })
-  @ApiResponse({ status: 200, description: 'Lista de pedidos pendentes' })
-  getPendingOrders(@CurrentUser() user: { userId: number; email: string }) {    
-    return this.ordersService.getPendingOrders(user.userId);
   }
 }

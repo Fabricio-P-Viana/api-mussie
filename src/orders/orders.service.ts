@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, LessThanOrEqual, Repository } from 'typeorm';
+import { And, Between, In, IsNull, LessThanOrEqual, Not, Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
@@ -17,7 +17,7 @@ export class OrdersService {
   ) {}
 
   async create(createOrderDto: CreateOrderDto, user: User): Promise<Order | null> {
-    const order = this.orderRepository.create({ user });
+    const order = this.orderRepository.create({ user, deliveryDate: createOrderDto.deliveryDate ? new Date(createOrderDto.deliveryDate) : undefined });
     const savedOrder = await this.orderRepository.save(order);
   
     let totalCost = 0;
@@ -95,12 +95,20 @@ export class OrdersService {
     }
   }
 
-  async getPendingOrders(userId: number): Promise<Order[]> {
+  async findPendingOrders(userId: number, startDate?: Date, endDate?: Date): Promise<Order[]> {
     const currentDate = new Date();
-    return this.orderRepository.find({
+    
+    // Definindo defaults para o primeiro e último dia do mês atual
+    const defaultStartDate = startDate || new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const defaultEndDate = endDate || new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  
+    return await this.orderRepository.find({
       where: {
         user: { id: userId },
-        deliveryDate: LessThanOrEqual(currentDate),
+        deliveryDate: And(
+          Not(IsNull()),
+          Between(defaultStartDate, defaultEndDate)
+        ),
         orderRecipes: {
           status: In(['pending', 'in_progress']),
         },
