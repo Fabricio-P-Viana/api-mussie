@@ -31,7 +31,7 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('Confeitaria API - Mossie')
+    .setTitle('Confeitaria API - Mussie')
     .setDescription('API para gerenciamento de estoque e pedidos de uma confeitaria')
     .setVersion('1.0')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'JWT-auth')

@@ -7,6 +7,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth, ApiParam, 
 import { PaginationPipe } from '../common/pipes/pagination.pipe';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CreateStockEntryDto } from './dto/create-stock-entry.dto';
 
 @ApiTags('ingredients')
 @Controller('ingredients')
@@ -21,7 +22,6 @@ export class IngredientsController {
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   async create(@Body() createIngredientDto: CreateIngredientDto,
   @CurrentUser() user: { userId: number; email: string }) {
-
     const ingredient = await this.ingredientsService.create(createIngredientDto,user.userId);
     return { success: true, data: ingredient };
   }
@@ -36,6 +36,19 @@ export class IngredientsController {
     @CurrentUser() user: { userId: number; email: string }, // Extrai userId do token
   ) {
     const result = await this.ingredientsService.findAll(pagination, user.userId); // Passa userId
+    return { success: true, data: result };
+  }
+
+  @Get('stock-history')
+  @ApiOperation({ summary: 'Lista todos os ingredientes do usuário autenticado com paginação' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (padrão: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página (padrão: 10)' })
+  @ApiResponse({ status: 200, description: 'Lista de ingredientes do usuário' })
+  async findAllHistory(
+    @Query(new PaginationPipe()) pagination: { skip: number; take: number },
+    @CurrentUser() user: { userId: number; email: string }, // Extrai userId do token
+  ) {
+    const result = await this.ingredientsService.getStockHistory(pagination, user.userId); // Passa userId
     return { success: true, data: result };
   }
 
@@ -82,4 +95,14 @@ export class IngredientsController {
     if (!ingredient) throw new NotFoundException('Ingrediente não encontrado');
     return { success: true, data: ingredient };
   }
+
+  @Post('stock-entry')
+  @ApiOperation({ summary: 'Adiciona uma entrada de estoque diretamente' })
+  @ApiResponse({ status: 201, description: 'Entrada de estoque registrada com sucesso' })
+  @ApiResponse({ status: 400, description: 'Erro na requisição' })
+  async addStockEntry(@Body() createStockEntryDto: CreateStockEntryDto) {
+    const updatedIngredient = await this.ingredientsService.addStockEntry(createStockEntryDto);
+    return { success: true, data: updatedIngredient };
+  }
+  
 }

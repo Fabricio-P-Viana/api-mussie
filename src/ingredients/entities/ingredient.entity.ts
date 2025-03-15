@@ -1,5 +1,6 @@
 import { User } from 'src/users/entities/user.entity';
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany } from 'typeorm';
+import { StockTransaction } from './stock-transaction.entity';
 
 @Entity()
 export class Ingredient {
@@ -41,4 +42,7 @@ export class Ingredient {
 
   @ManyToOne(() => User, (user) => user.ingredient)
   user: User;
+
+  @OneToMany(() => StockTransaction, (transaction) => transaction.ingredient)
+  transactions: StockTransaction[];
 }

@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { And, Between, In, IsNull, LessThanOrEqual, Not, Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
@@ -16,34 +16,33 @@ export class OrdersService {
     private recipesService: RecipesService,
   ) {}
 
-  async create(createOrderDto: CreateOrderDto, user: User): Promise<Order|null> {
-    try {
-      const order = this.orderRepository.create({ user });
-      const savedOrder = await this.orderRepository.save(order);
+  async create(createOrderDto: CreateOrderDto, user: User): Promise<Order | null> {
+    const order = this.orderRepository.create({ user, deliveryDate: createOrderDto.deliveryDate ? new Date(createOrderDto.deliveryDate) : undefined });
+    const savedOrder = await this.orderRepository.save(order);
   
-      const orderRecipes = await Promise.all(
-        createOrderDto.recipes.map(async (recipeInput) => {
-          const recipe = await this.recipesService.findOne(recipeInput.recipeId, user.id);
-          if (!recipe) throw new BadRequestException(`Receita ${recipeInput.recipeId} não encontrada`);
-          
-          return {
-            order: savedOrder,
-            recipe,
-            servings: recipeInput.servings,
-            extraPrice: recipeInput.extraPrice,
-            observations: recipeInput.observations,
-            status: 'pending',
-          } as OrderRecipe;
-        }),
-      );
+    let totalCost = 0;
+    const orderRecipes = await Promise.all(
+      createOrderDto.recipes.map(async (recipeInput) => {
+        const recipe = await this.recipesService.findOne(recipeInput.recipeId, user.id);
+        if (!recipe) throw new BadRequestException(`Receita ${recipeInput.recipeId} não encontrada`);
   
-      await this.orderRepository.manager.getRepository(OrderRecipe).save(orderRecipes);
-      return this.findOne(savedOrder.id, user.id);
-    } catch (error) {
-      console.error('Erro ao criar pedido:', error);
-      if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException('Erro ao criar pedido');
-    }
+        const recipeCost = recipe.cost * recipeInput.servings;
+        totalCost += recipeCost;
+  
+        return {
+          order: savedOrder,
+          recipe,
+          servings: recipeInput.servings,
+          extraPrice: recipeInput.extraPrice,
+          observations: recipeInput.observations,
+          unitPrice: recipe.price || 0,
+          status: 'pending',
+        } as OrderRecipe;
+      }),
+    );
+  
+    await this.orderRepository.manager.getRepository(OrderRecipe).save(orderRecipes);
+    return this.findOne(savedOrder.id, user.id);
   }
 
   async findOne(id: number, userId: number): Promise<Order> {
@@ -94,5 +93,30 @@ export class OrdersService {
       if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException('Erro ao atualizar pedido');
     }
+  }
+
+  async findPendingOrders(userId: number, startDate?: Date, endDate?: Date): Promise<Order[]> {
+    const currentDate = new Date();
+    
+    // Definindo defaults para o primeiro e último dia do mês atual
+    const defaultStartDate = startDate || new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const defaultEndDate = endDate || new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  
+    return await this.orderRepository.find({
+      where: {
+        user: { id: userId },
+        deliveryDate: And(
+          Not(IsNull()),
+          Between(defaultStartDate, defaultEndDate)
+        ),
+        orderRecipes: {
+          status: In(['pending', 'in_progress']),
+        },
+      },
+      relations: ['orderRecipes', 'orderRecipes.recipe'],
+      order: {
+        deliveryDate: 'ASC',
+      },
+    });
   }
 }

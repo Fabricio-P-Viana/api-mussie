@@ -1,4 +1,4 @@
-import { IsNumber, Min, IsOptional, IsString, IsDateString, IsArray, ValidateNested } from 'class-validator';
+import { IsNumber, Min, IsOptional, IsString, IsDateString, IsArray, ValidateNested, IsDate } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -24,10 +24,17 @@ class RecipeOrderInput {
   @ApiProperty({ description: 'Observações', example: 'Sem açúcar', required: false })
   observations?: string;
 }
+
 export class CreateOrderDto {
   @IsArray({ message: 'As receitas devem ser uma lista' })
   @ValidateNested({ each: true })
   @Type(() => RecipeOrderInput)
   @ApiProperty({ description: 'Lista de receitas no pedido', type: [RecipeOrderInput] })
   recipes: RecipeOrderInput[];
+
+  @IsOptional()
+/*   @IsString({ message: 'A data de entrega deve ser uma string no formato ISO' }) */
+  @Type(() => Date)
+  @ApiProperty({ description: 'Data de entrega', example: '2025-03-15T10:00', required: false })
+  deliveryDate?: Date;
 }
