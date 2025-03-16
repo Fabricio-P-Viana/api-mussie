@@ -12,6 +12,8 @@ import { UploadsModule } from './uploads/uploads.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { ReportsModule } from './reports/reports.module';
 import * as path from 'path';
+import { NotificationsModule } from './notifications/notifications.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -41,6 +43,8 @@ import * as path from 'path';
     UsersModule,
     UploadsModule,
     ReportsModule,
+    NotificationsModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService],
