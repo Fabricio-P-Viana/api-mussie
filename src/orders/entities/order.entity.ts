@@ -24,4 +24,7 @@ export class Order {
 
   @Column({ nullable: true }) 
   deliveryDate?: Date;
+
+  @Column({ nullable: true })
+  total?: number;
 }

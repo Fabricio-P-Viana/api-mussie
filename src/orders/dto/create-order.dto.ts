@@ -37,4 +37,10 @@ export class CreateOrderDto {
   @Type(() => Date)
   @ApiProperty({ description: 'Data de entrega', example: '2025-03-15T10:00', required: false })
   deliveryDate?: Date;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'O total deve ser um número' })
+  @Min(0, { message: 'O total não pode ser negativo' })
+  @ApiProperty({ description: 'Total', example: 25.99, required: false })
+  total?: number;
 }
