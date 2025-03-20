@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ReportsService } from './reports.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
@@ -48,5 +48,14 @@ export class ReportsController {
     @Query('endDate') endDate: string,
   ) {
     return this.reportsService.getPopularRecipes(user.userId, startDate, endDate);
+  }
+
+  @Get('shopping-list')
+  async getShoppingList(
+    @CurrentUser() user: { userId: number; email: string },
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    return await this.reportsService.getShoppingList(user.userId, startDate, endDate);
   }
 }
