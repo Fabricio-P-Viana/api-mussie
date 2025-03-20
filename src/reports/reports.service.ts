@@ -13,12 +13,23 @@ export class ReportsService {
     private ingredientRepository: Repository<Ingredient>,
   ) {}
 
-  async getOrderHistory(userId: number, startDate: string, endDate: string): Promise<Order[]> {
+  async getOrderHistory(
+    userId: number,
+    startDate: string,
+    endDate: string,
+    status?: string 
+  ): Promise<Order[]> {
+    const whereClause: any = {
+      user: { id: userId },
+      createdAt: Between(new Date(startDate), new Date(endDate)),
+    };
+  
+    if (status) {
+      whereClause.status = status; // Adiciona filtro por status se fornecido
+    }
+  
     return this.orderRepository.find({
-      where: {
-        user: { id: userId },
-        createdAt: Between(new Date(startDate), new Date(endDate)),
-      },
+      where: whereClause,
       relations: [
         'orderRecipes',
         'orderRecipes.recipe',
@@ -50,12 +61,17 @@ export class ReportsService {
     });
     return Object.values(recipeCount).sort((a, b) => b.count - a.count);
   }
-  async getShoppingList(userId: number, startDate: string, endDate: string): Promise<{
+  async getShoppingList(
+    userId: number,
+    startDate: string,
+    endDate: string
+  ): Promise<{
     requiredIngredients: { name: string; amount: number; unit: string }[];
     currentStock: { name: string; stock: number; unit: string }[];
     shoppingList: { name: string; amountToBuy: number; unit: string }[];
   }> {
-    const orders = await this.getOrderHistory(userId, startDate, endDate);
+    // Filtrar apenas pedidos pendentes
+    const orders = await this.getOrderHistory(userId, startDate, endDate, 'pending');
   
     // Verificar se orders é um array válido
     if (!Array.isArray(orders)) {
