@@ -1,5 +1,5 @@
 // src/recipes/dto/create-recipe.dto.ts
-import { IsString, IsNumber, Min, IsArray, ValidateNested, IsOptional } from 'class-validator';
+import { IsString, IsNumber, Min, IsArray, ValidateNested, IsOptional, IsBoolean } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -49,4 +49,12 @@ export class CreateRecipeDto {
   @Type(() => IngredientInput)
   @ApiProperty({ description: 'Lista de ingredientes', type: [IngredientInput] })
   ingredients: IngredientInput[];
+
+  @IsOptional() 
+  @IsBoolean()
+  showInPortifolio?: boolean;
+
+  @IsOptional() 
+  @IsString()
+  preparationMode?: string;
 }

@@ -25,7 +25,9 @@ export class AuthService {
   async getPortfolio(userId: number): Promise<{ id: number; name: string; nameConfectionery: string; phone: string; recipes: any[] }> {
     try {
       const user = await this.userRepository.findOne({
-        where: { id: userId },
+        where: { id: userId, recipes: {
+          showInPortifolio: true,
+        } },
         relations: ['recipes'],
       });
       if (!user) {

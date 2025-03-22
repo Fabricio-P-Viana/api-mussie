@@ -43,4 +43,10 @@ export class Recipe {
 
   @OneToMany(() => OrderRecipe, (orderRecipe) => orderRecipe.recipe)
   orderRecipes: OrderRecipe[];
+
+  @Column({ default: false })
+  showInPortifolio: boolean;
+
+  @Column({ type: 'text', default: '' })
+  preparationMode: string;
 }
