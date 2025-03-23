@@ -33,4 +33,7 @@ export class OrderRecipe {
 
   @Column({ type: 'decimal' })
   unitPrice: number;
+
+  @Column({ type: 'timestamp', nullable: true })
+  executedAt: Date | null;
 }

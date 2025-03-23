@@ -1,12 +1,12 @@
 import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Recipe } from './entities/recipe.entity';
 import { RecipeIngredient } from './entities/recipe-ingredient.entity';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
 import { IngredientsService } from '../ingredients/ingredients.service';
 import { User } from '../users/entities/user.entity';
-import { TransactionType } from 'src/ingredients/entities/stock-transaction.entity';
+import { StockTransaction, TransactionType } from 'src/ingredients/entities/stock-transaction.entity';
 
 @Injectable()
 export class RecipesService {
@@ -16,6 +16,7 @@ export class RecipesService {
     @InjectRepository(RecipeIngredient)
     private recipeIngredientRepository: Repository<RecipeIngredient>,
     private ingredientsService: IngredientsService,
+    private dataSource: DataSource,
   ) {}
 
   async create(createRecipeDto: CreateRecipeDto, imagePath: string | undefined, user: User): Promise<Recipe | null> {
@@ -98,37 +99,51 @@ export class RecipesService {
     }
   }
 
-  async executeRecipe(recipeId: number, servings: number, userId: number) {
+  async executeRecipe(recipeId: number, servings: number, userId: number): Promise<{ message: string }> {
     const recipe = await this.findOne(recipeId, userId);
-    if (!recipe) throw new BadRequestException('Receita não encontrada ou não pertence ao usuário');
+
+    if (!recipe) throw new BadRequestException('Receita não encontrada');
 
     const factor = servings / recipe.servings;
-    console.log('Fator de conversão:', factor);
-
-    for (const recipeIngredient of recipe.ingredients) {
-      const ingredient = await this.ingredientsService.findOne(recipeIngredient.ingredient.id);
-      if (ingredient === null) return; // Ajuste: Retorna null explicitamente se o ingrediente não for encontrado
-      const baseAmount = recipeIngredient.amount * factor;
-      const fixedWaste = baseAmount * ingredient.fixedWasteFactor;
-      const variableWaste = baseAmount * ingredient.variableWasteFactor;
-      const realConsumption = baseAmount + fixedWaste + variableWaste;
-      console.log(`Consumo real de ${ingredient.name}: ${realConsumption}`);
-      console.log(`Estoque atual de ${ingredient.name}: ${ingredient.stock}`);
-
-      if (ingredient.stock < realConsumption) {
-        throw new BadRequestException(`Estoque insuficiente para ${ingredient.name}`);
-      }
-
-      ingredient.stock -= realConsumption;
-      await this.ingredientsService.update(ingredient.id, { stock: ingredient.stock });
-      await this.ingredientsService.recordStockTransaction(
-        ingredient.id,
-        TransactionType.EXIT,
-        realConsumption,
-        `Consumo na execução da receita ${recipe.name}`,
-      );
+    if (factor <= 0 || !Number.isFinite(factor)) {
+      throw new BadRequestException('Fator de conversão inválido');
     }
-    return { message: 'Receita executada e estoque atualizado' };
+
+    await this.dataSource.transaction(async (manager) => {
+      for (const recipeIngredient of recipe.ingredients) {
+        const ingredient = await this.ingredientsService.findOne(recipeIngredient.ingredient.id);
+        if (!ingredient) {
+          throw new BadRequestException(`Ingrediente ${recipeIngredient.ingredient.id} não encontrado`);
+        }
+
+        const baseAmount = recipeIngredient.amount * factor;
+        const fixedWaste = baseAmount * ingredient.fixedWasteFactor;
+        const variableWaste = baseAmount * ingredient.variableWasteFactor;
+        const realConsumption = baseAmount + fixedWaste + variableWaste;
+
+        if (ingredient.stock < realConsumption) {
+          throw new BadRequestException(
+            `Estoque insuficiente para ${ingredient.name}. Necessário: ${realConsumption}, Disponível: ${ingredient.stock}`
+          );
+        }
+
+        // Atualizar o estoque
+        ingredient.stock -= realConsumption;
+        await manager.save(ingredient);
+
+        // Registrar a transação de estoque com "quantity" em vez de "amount"
+        const stockTransaction = manager.create(StockTransaction, {
+          ingredient: { id: ingredient.id },
+          quantity: realConsumption, // Usar "quantity" e valor positivo (ajuste na descrição indica saída)
+          type: TransactionType.EXIT,
+          description: `Consumo na execução da receita ${recipe.name} (${servings} porções)`,
+          user: { id: userId },
+        });
+        await manager.save(stockTransaction);
+      }
+    });
+
+    return { message: 'Receita executada e estoque atualizado com sucesso' };
   }
 
   async update(id: number, updateRecipeDto: CreateRecipeDto, imagePath: string | undefined, user: User): Promise<Recipe | null> {
