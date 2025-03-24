@@ -51,6 +51,18 @@ export class OrdersController {
     return this.ordersService.findPendingOrders(user.userId, startDate, endDate);
   }
 
+  @Get('history')
+  @ApiOperation({ summary: 'Lista o histórico de pedidos concluídos e cancelados com paginação' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Lista de pedidos históricos' })
+  findHistory(
+    @Query(new PaginationPipe()) pagination: { skip: number; take: number },
+    @CurrentUser() user: { userId: number; email: string },
+  ) {
+    return this.ordersService.findHistory(pagination, user.userId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Busca um pedido do usuário por ID' })
   @ApiParam({ name: 'id', type: Number, description: 'ID do pedido' })

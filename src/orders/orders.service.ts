@@ -17,7 +17,10 @@ export class OrdersService {
   ) {}
 
   async create(createOrderDto: CreateOrderDto, user: User): Promise<Order | null> {
-    const order = this.orderRepository.create({ user, deliveryDate: createOrderDto.deliveryDate ? new Date(createOrderDto.deliveryDate) : undefined });
+    const order = this.orderRepository.create({ 
+      user, 
+      deliveryDate: createOrderDto.deliveryDate ? new Date(createOrderDto.deliveryDate) : undefined 
+    });
     const savedOrder = await this.orderRepository.save(order);
   
     let totalCost = 0;
@@ -26,7 +29,7 @@ export class OrdersService {
         const recipe = await this.recipesService.findOne(recipeInput.recipeId, user.id);
         if (!recipe) throw new BadRequestException(`Receita ${recipeInput.recipeId} não encontrada`);
   
-        const recipeCost = recipe.cost * recipeInput.servings;
+        const recipeCost = recipe.price * recipeInput.servings + (recipeInput.extraPrice || 0);
         totalCost += recipeCost;
   
         return {
@@ -41,6 +44,8 @@ export class OrdersService {
       }),
     );
   
+    savedOrder.total = totalCost;
+    await this.orderRepository.save(savedOrder);
     await this.orderRepository.manager.getRepository(OrderRecipe).save(orderRecipes);
     return this.findOne(savedOrder.id, user.id);
   }
@@ -56,7 +61,10 @@ export class OrdersService {
   
   async findAll(pagination: { skip: number; take: number }, userId: number): Promise<{ data: Order[]; total: number }> {
     const [data, total] = await this.orderRepository.findAndCount({
-      where: { user: { id: userId } },
+      where: {
+        user: { id: userId },
+        status: Not('completed'),
+      },
       relations: ['orderRecipes', 'orderRecipes.recipe'],
       skip: pagination.skip,
       take: pagination.take,
@@ -64,30 +72,64 @@ export class OrdersService {
     return { data, total };
   }
 
-  async update(id: number, updateOrderDto: UpdateOrderDto, userId: number): Promise<Order|null> {
+  async findHistory(pagination: { skip: number; take: number }, userId: number): Promise<{ data: Order[]; total: number }> {
+    const [data, total] = await this.orderRepository.findAndCount({
+      where: {
+        user: { id: userId },
+        status: In(['completed', 'canceled']),
+      },
+      relations: ['orderRecipes', 'orderRecipes.recipe'],
+      skip: pagination.skip,
+      take: pagination.take,
+      order: {
+        updatedAt: 'DESC',
+      },
+    });
+    return { data, total };
+  }
+
+  async update(id: number, updateOrderDto: UpdateOrderDto, userId: number): Promise<Order | null> {
     try {
-      const order = await this.findOne(id, userId);
-      if (!order) throw new BadRequestException('Pedido não encontrado');
-  
-      if (updateOrderDto.status) {
-        order.status = updateOrderDto.status;
-        await this.orderRepository.save(order);
-      }
-  
-      if (updateOrderDto.recipeUpdates?.length) {
-        for (const update of updateOrderDto.recipeUpdates) {
-          const orderRecipe = order.orderRecipes.find(or => or.recipe.id === update.recipeId);
-          if (!orderRecipe) throw new BadRequestException(`Receita ${update.recipeId} não encontrada no pedido`);
-          
-          orderRecipe.status = update.status;
-          if (update.status === 'completed' && orderRecipe.status !== 'completed') {
-            await this.recipesService.executeRecipe(orderRecipe.recipe.id, orderRecipe.servings, userId);
-          }
-          await this.orderRepository.manager.getRepository(OrderRecipe).save(orderRecipe);
+      return await this.orderRepository.manager.transaction(async (manager) => {
+        const order = await this.findOne(id, userId);
+        if (!order) throw new BadRequestException('Pedido não encontrado');
+        if (order.status === 'completed' || order.status === 'canceled') {
+          throw new BadRequestException('Pedidos concluídos ou cancelados não podem ser atualizados');
         }
-      }
-  
-      return this.findOne(id, userId);
+
+        if (updateOrderDto.status) {
+          order.status = updateOrderDto.status;
+          await manager.save(order);
+        }
+
+        let allRecipesCompleted = true;
+        if (updateOrderDto.recipeUpdates?.length) {
+          for (const update of updateOrderDto.recipeUpdates) {
+            const orderRecipe = order.orderRecipes.find(or => or.recipe.id === update.recipeId);
+            if (!orderRecipe) throw new BadRequestException(`Receita ${update.recipeId} não encontrada no pedido`);
+
+            const previousStatus = orderRecipe.status;
+            orderRecipe.status = update.status;
+
+            if (update.status === 'completed' && previousStatus !== 'completed' && !orderRecipe.executedAt) {
+              await this.recipesService.executeRecipe(orderRecipe.recipe.id, orderRecipe.servings, userId);
+              orderRecipe.executedAt = new Date();
+            }
+
+            await manager.getRepository(OrderRecipe).save(orderRecipe);
+            if (orderRecipe.status !== 'completed') allRecipesCompleted = false;
+          }
+        } else {
+          allRecipesCompleted = order.orderRecipes.every(or => or.status === 'completed');
+        }
+
+        if (allRecipesCompleted && (!updateOrderDto.status || updateOrderDto.status === 'completed')) {
+          order.status = 'completed';
+          await manager.save(order);
+        }
+
+        return this.findOne(id, userId);
+      });
     } catch (error) {
       console.error('Erro ao atualizar pedido:', error);
       if (error instanceof BadRequestException) throw error;
@@ -97,14 +139,13 @@ export class OrdersService {
 
   async findPendingOrders(userId: number, startDate?: Date, endDate?: Date): Promise<Order[]> {
     const currentDate = new Date();
-    
-    // Definindo defaults para o primeiro e último dia do mês atual
     const defaultStartDate = startDate || new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const defaultEndDate = endDate || new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
   
     return await this.orderRepository.find({
       where: {
         user: { id: userId },
+        status: Not('completed'),
         deliveryDate: And(
           Not(IsNull()),
           Between(defaultStartDate, defaultEndDate)

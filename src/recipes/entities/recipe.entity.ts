@@ -47,6 +47,6 @@ export class Recipe {
   @Column({ default: false })
   showInPortifolio: boolean;
 
-  @Column({ type: 'text', default: '' })
+  @Column({ type: 'text' })
   preparationMode: string;
 }

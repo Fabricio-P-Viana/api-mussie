@@ -25,6 +25,6 @@ export class Order {
   @Column({ nullable: true }) 
   deliveryDate?: Date;
 
-  @Column({ nullable: true })
+  @Column({ type: 'float', nullable: true })
   total?: number;
 }
