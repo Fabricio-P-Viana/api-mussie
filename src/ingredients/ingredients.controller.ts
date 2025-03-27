@@ -104,5 +104,4 @@ export class IngredientsController {
     const updatedIngredient = await this.ingredientsService.addStockEntry(createStockEntryDto);
     return { success: true, data: updatedIngredient };
   }
-  
 }
