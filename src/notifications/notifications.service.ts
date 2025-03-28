@@ -126,7 +126,7 @@ export class NotificationsService {
             userId,
             ingredient.id,
             'low_stock',
-            `Stock of ${ingredient.name} is below minimum (${ingredient.stock} ${ingredient.unity} < ${ingredient.minimumStock} ${ingredient.unity}).`,
+            `O Estoque do produto ${ingredient.name} está abaixo do minimo (${ingredient.stock} ${ingredient.unity} < ${ingredient.minimumStock} ${ingredient.unity}).`,
           );
           this.logger.log(`Low stock notification created for ${ingredient.name}`);
         }
@@ -150,7 +150,7 @@ export class NotificationsService {
               userId,
               ingredient.id,
               'near_expiration',
-              `Expiration date for ${ingredient.name} is approaching (${expirationDate.toLocaleDateString('pt-BR')}).`,
+              `A data de validade do produto ${ingredient.name} está se aproxumando (${expirationDate.toLocaleDateString('pt-BR')}).`,
             );
             this.logger.log(`Expiration notification created for ${ingredient.name}`);
           }
