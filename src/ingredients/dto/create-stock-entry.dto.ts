@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNumber, IsOptional, Min } from 'class-validator';
+import { IsDateString, IsInt, IsNumber, IsOptional, Min } from 'class-validator';
 
 export class CreateStockEntryDto {
   @ApiProperty({ description: 'ID do ingrediente', example: 1 })
@@ -19,4 +19,9 @@ export class CreateStockEntryDto {
   @ApiProperty({ description: 'Descrição da transação (opcional)', example: 'Compra no mercado', required: false })
   @IsOptional()
   description?: string;
+
+  @ApiProperty({ description: 'Data de validade (opcional)', example: '2025-12-31', required: false })
+  @IsDateString()
+  @IsOptional()
+  expirationDate?: string;
 }

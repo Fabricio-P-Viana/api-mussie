@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, UseGuards, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, UseGuards, Query, ParseIntPipe, Patch } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -88,4 +88,41 @@ export class OrdersController {
   ) {
     return this.ordersService.update(id, updateOrderDto, user.userId);
   }
+
+  @Get(':id/production/progress')
+@ApiOperation({ summary: 'Obtém o progresso de produção de um pedido' })
+@ApiParam({ name: 'id', type: Number, description: 'ID do pedido' })
+@ApiResponse({ status: 200, description: 'Progresso de produção encontrado' })
+@ApiResponse({ status: 404, description: 'Progresso não encontrado' })
+async getProductionProgress(
+  @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
+  @CurrentUser() user: { userId: number; email: string },
+) {
+  return this.ordersService.getProductionProgress(id, user.userId);
+}
+
+@Patch(':id/production/progress')
+@ApiOperation({ summary: 'Salva o progresso de produção de um pedido' })
+@ApiParam({ name: 'id', type: Number, description: 'ID do pedido' })
+@ApiResponse({ status: 200, description: 'Progresso salvo com sucesso' })
+@ApiResponse({ status: 400, description: 'Dados inválidos' })
+async saveProductionProgress(
+  @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
+  @Body() progressData: any, // Você pode criar um DTO específico para isso
+  @CurrentUser() user: { userId: number; email: string },
+) {
+  return this.ordersService.saveProductionProgress(id, progressData, user.userId);
+}
+
+@Patch(':id/production/complete')
+@ApiOperation({ summary: 'Marca um pedido como concluído na produção' })
+@ApiParam({ name: 'id', type: Number, description: 'ID do pedido' })
+@ApiResponse({ status: 200, description: 'Pedido marcado como concluído' })
+@ApiResponse({ status: 400, description: 'Pedido já concluído ou cancelado' })
+async completeProduction(
+  @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
+  @CurrentUser() user: { userId: number; email: string },
+) {
+  return this.ordersService.completeProduction(id, user.userId);
+}
 }

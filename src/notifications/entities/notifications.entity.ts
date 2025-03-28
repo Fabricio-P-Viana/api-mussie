@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+// notification.entity.ts
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Ingredient } from '../../ingredients/entities/ingredient.entity';
 
@@ -7,28 +8,26 @@ export class Notification {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  @Index()
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @ManyToOne(() => Ingredient, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'ingredientId' })
+  @ManyToOne(() => Ingredient)
+  @JoinColumn({ name: 'ingredient_id' })
   ingredient: Ingredient;
 
-  @Column({ type: 'enum', enum: ['low_stock', 'near_expiration'], default: 'low_stock' })
-  type: 'low_stock' | 'near_expiration';
+  @Column({ type: 'varchar', length: 50 })
+  type: string;
 
-  @Column({ type: 'varchar', length: 500 })
+  @Column({ type: 'text' })
   message: string;
 
-  @Column({ default: false })
-  @Index()
+  @Column({ type: 'boolean', default: false })
   isRead: boolean;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }

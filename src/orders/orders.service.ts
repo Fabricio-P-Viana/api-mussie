@@ -160,4 +160,70 @@ export class OrdersService {
       },
     });
   }
+
+  async getProductionProgress(orderId: number, userId: number): Promise<any> {
+    const order = await this.findOne(orderId, userId);
+    
+    return {
+      steps: order.orderRecipes.map(or => ({
+        orderRecipeId: or.id,
+        completed: or.status === 'completed',
+        ingredients: or.recipe.ingredients?.map(ing => ({
+          id: ing.id,
+          prepared: false
+        })) || []
+      }))
+    };
+  }
+  
+  async saveProductionProgress(orderId: number, progressData: any, userId: number): Promise<void> {
+    const order = await this.findOne(orderId, userId);
+    
+    await this.orderRepository.manager.transaction(async (manager) => {
+      for (const step of progressData.steps) {
+        const orderRecipe = order.orderRecipes.find(or => or.id === step.orderRecipeId);
+        if (!orderRecipe) continue;
+        
+        // Atualiza o status da receita se todos os ingredientes estiverem preparados
+        const allIngredientsPrepared = step.ingredients.every((i: any) => i.prepared);
+        if (allIngredientsPrepared) {
+          orderRecipe.status = 'completed';
+        } else if (orderRecipe.status === 'pending') {
+          orderRecipe.status = 'in_progress';
+        }
+        
+        await manager.getRepository(OrderRecipe).save(orderRecipe);
+      }
+      
+      // Verifica se todas as receitas estão completas
+      const allRecipesCompleted = order.orderRecipes.every(or => or.status === 'completed');
+      if (allRecipesCompleted) {
+        order.status = 'completed';
+        await manager.save(order);
+      }
+    });
+  }
+  
+  async completeProduction(orderId: number, userId: number): Promise<Order> {
+    const order = await this.findOne(orderId, userId);
+    
+    if (order.status === 'completed' || order.status === 'canceled') {
+      throw new BadRequestException('Pedidos concluídos ou cancelados não podem ser atualizados');
+    }
+    
+    // Marca todas as receitas como completas
+    await this.orderRepository.manager.transaction(async (manager) => {
+      for (const orderRecipe of order.orderRecipes) {
+        if (orderRecipe.status !== 'completed') {
+          orderRecipe.status = 'completed';
+          await manager.getRepository(OrderRecipe).save(orderRecipe);
+        }
+      }
+      
+      order.status = 'completed';
+      await manager.save(order);
+    });
+    
+    return this.findOne(orderId, userId);
+  }
 }

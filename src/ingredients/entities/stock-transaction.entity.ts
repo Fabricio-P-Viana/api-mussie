@@ -25,4 +25,7 @@ export class StockTransaction {
 
   @Column({ type: 'text', nullable: true })
   description?: string;
+
+  @Column({ type: 'date', nullable: true })
+  expirationDate?: Date;
 }
