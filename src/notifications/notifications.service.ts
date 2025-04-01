@@ -6,12 +6,16 @@ import { Repository } from 'typeorm';
 import { Notification } from './entities/notifications.entity';
 import { Ingredient } from '../ingredients/entities/ingredient.entity';
 import { User } from '../users/entities/user.entity';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
   constructor(
+    @InjectQueue('notifications') 
+    private readonly notificationsQueue: Queue,
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
     @InjectRepository(Ingredient)
@@ -26,15 +30,17 @@ export class NotificationsService {
     type: 'low_stock' | 'near_expiration' | string,
     message: string,
   ): Promise<any> {
-    const notification = this.notificationRepository.create({
-      user: { id: userId },
-      ingredient: { id: ingredientId },
+    await this.notificationsQueue.add('create', {
+      userId,
+      ingredientId,
       type,
       message,
+    }, {
+      attempts: 3,
+      backoff: 5000 
     });
     
-    const savedNotification = await this.notificationRepository.save(notification);
-    return this.formatNotificationResponse(savedNotification);
+    return { status: 'queued', message: 'Notification is being processed' };
   }
 
   async findByUserId(userId: number, isRead?: boolean): Promise<any[]> {

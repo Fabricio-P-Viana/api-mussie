@@ -11,6 +11,35 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
+  @Get()
+  @ApiOperation({ summary: 'Get weekly report' })
+  @ApiResponse({ status: 200, description: 'Report generated successfully' })
+  async getReport(
+    @CurrentUser() user: { userId: number },
+    @Query('firstDay') firstDay: string,
+    @Query('lastDay') lastDay: string,
+  ) {
+    return this.reportsService.generateWeeklyReport(user.userId, firstDay, lastDay);
+  }
+
+  @Get('shopping-list')
+  @ApiOperation({ summary: 'Get shopping list' })
+  @ApiResponse({ status: 200, description: 'Shopping list generated successfully' })
+  async getShoppingList(
+    @CurrentUser() user: { userId: number },
+    @Query('firstDay') firstDay: string,
+    @Query('lastDay') lastDay: string,
+  ) {
+    return this.reportsService.generateShoppingList(user.userId, firstDay, lastDay);
+  }
+
+  @Get('send-email')
+  @ApiOperation({ summary: 'Send weekly report email' })
+  @ApiResponse({ status: 200, description: 'Email sent successfully' })
+  async sendReportEmail(@CurrentUser() user: { userId: number }) {
+    return this.reportsService.sendWeeklyReportEmail(user.userId);
+  }
+
   @Get('orders')
   @ApiOperation({ summary: 'Obtém histórico de pedidos por período' })
   @ApiQuery({ name: 'startDate', required: true, type: String })
@@ -48,14 +77,5 @@ export class ReportsController {
     @Query('endDate') endDate: string,
   ) {
     return this.reportsService.getPopularRecipes(user.userId, startDate, endDate);
-  }
-
-  @Get('shopping-list')
-  async getShoppingList(
-    @CurrentUser() user: { userId: number; email: string },
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
-  ) {
-    return await this.reportsService.getShoppingList(user.userId, startDate, endDate);
   }
 }

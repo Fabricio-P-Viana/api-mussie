@@ -1,16 +1,24 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In } from 'typeorm';
 import { Order } from '../orders/entities/order.entity';
 import { Ingredient } from 'src/ingredients/entities/ingredient.entity';
+import { User } from 'src/auth/entities/user.entity';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class ReportsService {
   constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    
     @InjectRepository(Order)
-    private orderRepository: Repository<Order>,
+    private readonly orderRepository: Repository<Order>,
+    
     @InjectRepository(Ingredient)
-    private ingredientRepository: Repository<Ingredient>,
+    private readonly ingredientRepository: Repository<Ingredient>,
+    
+    private readonly mailService: MailService,
   ) {}
 
   async getOrderHistory(userId: number, startDate: string, endDate: string): Promise<Order[]> {
@@ -135,5 +143,72 @@ export class ReportsService {
       }, 0);
       return sum + (order.status === 'completed' ? orderRevenue : 0);
     }, 0);
+  }
+
+  async generateWeeklyReport(userId: number, startDate: string, endDate: string) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Lógica para gerar o relatório
+    const ingredients = await this.ingredientRepository.find({
+      where: { user: { id: userId } },
+    });
+
+    // Formatar dados do relatório
+    return {
+      userId,
+      startDate,
+      endDate,
+      totalIngredients: ingredients.length,
+      lowStockItems: ingredients.filter(i => i.stock < (i.minimumStock || 0)).length,
+      expiringSoon: ingredients.filter(i => {
+        if (!i.expirationDate) return false;
+        const expDate = new Date(i.expirationDate);
+        const threshold = new Date();
+        threshold.setDate(threshold.getDate() + 7);
+        return expDate <= threshold;
+      }).length,
+    };
+  }
+
+  async generateShoppingList(userId: number, startDate: string, endDate: string) {
+    const ingredients = await this.ingredientRepository.find({
+      where: { user: { id: userId } },
+    });
+
+    // Filtrar itens com estoque abaixo do mínimo
+    return ingredients
+      .filter(i => i.minimumStock && i.stock < i.minimumStock)
+      .map(i => ({
+        name: i.name,
+        currentStock: i.stock,
+        minimumStock: i.minimumStock,
+        unity: i.unity,
+        needed: i.minimumStock - i.stock,
+      }));
+  }
+
+  async sendWeeklyReportEmail(userId: number) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user || !user.email) {
+      throw new Error('User or user email not found');
+    }
+
+    // Calcular datas (últimos 7 dias)
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 7);
+
+    const formattedStart = startDate.toISOString().split('T')[0];
+    const formattedEnd = endDate.toISOString().split('T')[0];
+
+    await this.mailService.sendWeeklyReport(
+      user.email,
+      userId,
+      formattedStart,
+      formattedEnd
+    );
   }
 }

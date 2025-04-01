@@ -12,8 +12,9 @@ import { OrderRecipe } from './entities/order-recipe.entity';
 export class OrdersService {
   constructor(
     @InjectRepository(Order)
-    private orderRepository: Repository<Order>,
-    private recipesService: RecipesService,
+    private readonly orderRepository: Repository<Order>,
+    
+    private readonly recipesService: RecipesService,
   ) {}
 
   async create(createOrderDto: CreateOrderDto, user: User): Promise<Order | null> {
