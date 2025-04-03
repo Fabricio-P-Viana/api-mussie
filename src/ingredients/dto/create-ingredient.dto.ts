@@ -41,5 +41,5 @@ export class CreateIngredientDto {
   @IsNumber({}, { message: 'O preço deve ser um número' })
   @Min(0, { message: 'O preço não pode ser negativo' })
   @ApiProperty({ description: 'Preço do ingrediente (em reais)', example: 10.5, required: false })
-  price?: number; // Novo campo, opcional
+  price?: number;
 }

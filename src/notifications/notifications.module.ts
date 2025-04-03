@@ -10,6 +10,6 @@ import { User } from '../users/entities/user.entity';
   imports: [TypeOrmModule.forFeature([Notification, Ingredient, User])],
   providers: [NotificationsService],
   controllers: [NotificationsController],
-  exports: [NotificationsService], // Para uso no cronjob
+  exports: [NotificationsService],
 })
 export class NotificationsModule {}

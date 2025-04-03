@@ -1,4 +1,3 @@
-// notifications.service.ts
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -100,7 +99,7 @@ export class NotificationsService {
   async checkIngredients() {
     this.logger.log('Checking ingredients for notifications...');
     const now = new Date();
-    const expirationThreshold = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+    const expirationThreshold = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 dias
 
     const ingredients = await this.ingredientRepository.find({
       relations: ['user'],
@@ -110,7 +109,7 @@ export class NotificationsService {
       const userId = ingredient.user?.id;
       if (!userId) continue;
 
-      // Check low stock
+      // Verifica estoque baixo
       if (ingredient.minimumStock && ingredient.stock < ingredient.minimumStock) {
         const existing = await this.notificationRepository.findOne({
           where: {
@@ -132,7 +131,7 @@ export class NotificationsService {
         }
       }
 
-      // Check expiration date
+      // Verifica data de validade
       if (ingredient.expirationDate) {
         const expirationDate = new Date(ingredient.expirationDate);
         if (expirationDate <= expirationThreshold) {

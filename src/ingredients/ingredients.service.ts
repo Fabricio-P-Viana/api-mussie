@@ -99,7 +99,7 @@ export class IngredientsService {
       type,
       quantity,
       description,
-      expirationDate: expirationDate ? new Date(expirationDate) : undefined, // Converte para Date
+      expirationDate: expirationDate ? new Date(expirationDate) : undefined, 
     });
     await this.stockTransactionRepository.save(transaction);
   }

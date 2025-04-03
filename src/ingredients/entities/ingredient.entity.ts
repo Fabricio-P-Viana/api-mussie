@@ -31,7 +31,7 @@ export class Ingredient {
   @Column({ type: 'float', default: 0 })
   minimumStock: number;
 
-  @Column({ type: 'float', default: 0 }) // Novo campo para preço
+  @Column({ type: 'float', default: 0 })
   price: number;
 
   @CreateDateColumn({ type: 'timestamp' })

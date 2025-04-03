@@ -149,9 +149,9 @@ export class AuthService {
       if (!file) throw new BadRequestException('Imagem é obrigatória para este endpoint');
       const user = await this.userRepository.findOneBy({ id: userId });
       if (!user) throw new BadRequestException('Usuário não encontrado');
-      const imagePath = `/uploads/${file.filename}`; // Caminho relativo
+      const imagePath = `/uploads/${file.filename}`;  
       await this.userRepository.update(userId, { profileImage: imagePath });
-      console.log('Imagem de perfil salva para o usuário', userId, 'em:', imagePath); // Log para depuração
+      console.log('Imagem de perfil salva para o usuário', userId, 'em:', imagePath);
       return { imagePath };
     } catch (error) {
       console.error('Erro ao fazer upload da imagem de perfil:', error);

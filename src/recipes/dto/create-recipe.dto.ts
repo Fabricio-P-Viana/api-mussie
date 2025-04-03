@@ -1,4 +1,3 @@
-// src/recipes/dto/create-recipe.dto.ts
 import { IsString, IsNumber, Min, IsArray, ValidateNested, IsOptional, IsBoolean } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';

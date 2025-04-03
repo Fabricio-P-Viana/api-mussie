@@ -41,7 +41,7 @@ export class User {
   phone: string | null;
 
   @Column({ type: 'varchar', nullable: true })
-  refreshToken: string | null; // Novo campo para armazenar o refresh token
+  refreshToken: string | null;
 
   @OneToMany(() => Recipe, (recipe) => recipe.user)
   recipes: Recipe[];

@@ -33,7 +33,6 @@ export class CreateOrderDto {
   recipes: RecipeOrderInput[];
 
   @IsOptional()
-/*   @IsString({ message: 'A data de entrega deve ser uma string no formato ISO' }) */
   @Type(() => Date)
   @ApiProperty({ description: 'Data de entrega', example: '2025-03-15T10:00', required: false })
   deliveryDate?: Date;

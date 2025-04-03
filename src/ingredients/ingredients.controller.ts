@@ -33,9 +33,9 @@ export class IngredientsController {
   @ApiResponse({ status: 200, description: 'Lista de ingredientes do usuário' })
   async findAll(
     @Query(new PaginationPipe()) pagination: { skip: number; take: number },
-    @CurrentUser() user: { userId: number; email: string }, // Extrai userId do token
+    @CurrentUser() user: { userId: number; email: string }, 
   ) {
-    const result = await this.ingredientsService.findAll(pagination, user.userId); // Passa userId
+    const result = await this.ingredientsService.findAll(pagination, user.userId); 
     return { success: true, data: result };
   }
 
@@ -46,9 +46,9 @@ export class IngredientsController {
   @ApiResponse({ status: 200, description: 'Lista de ingredientes do usuário' })
   async findAllHistory(
     @Query(new PaginationPipe()) pagination: { skip: number; take: number },
-    @CurrentUser() user: { userId: number; email: string }, // Extrai userId do token
+    @CurrentUser() user: { userId: number; email: string }, 
   ) {
-    const result = await this.ingredientsService.getStockHistory(pagination, user.userId); // Passa userId
+    const result = await this.ingredientsService.getStockHistory(pagination, user.userId); 
     return { success: true, data: result };
   }
 

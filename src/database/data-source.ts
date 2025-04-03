@@ -8,5 +8,5 @@ export const DataSource = new TypeOrmDataSource({
   password: 'root',
   database: 'confeitaria',
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-  synchronize: true, // Apenas para desenvolvimento
+  synchronize: true,
 });

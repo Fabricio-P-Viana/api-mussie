@@ -108,7 +108,7 @@ async getProductionProgress(
 @ApiResponse({ status: 400, description: 'Dados inválidos' })
 async saveProductionProgress(
   @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
-  @Body() progressData: any, // Você pode criar um DTO específico para isso
+  @Body() progressData: any,
   @CurrentUser() user: { userId: number; email: string },
 ) {
   return this.ordersService.saveProductionProgress(id, progressData, user.userId);

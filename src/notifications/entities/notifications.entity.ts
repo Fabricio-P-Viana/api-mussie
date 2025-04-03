@@ -1,4 +1,3 @@
-// notification.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Ingredient } from '../../ingredients/entities/ingredient.entity';

@@ -20,13 +20,13 @@ export class Recipe {
   @Column({ nullable: true })
   image: string;
 
-  @Column({ type: 'int', nullable: true }) // Tempo de preparo em minutos
+  @Column({ type: 'int', nullable: true }) 
   preparationTime: number | null;
 
-  @Column({ type: 'text', nullable: true }) // Descrição da receita
+  @Column({ type: 'text', nullable: true }) 
   description: string | null;
 
-  @Column({ type: 'float' }) // Preço da receita (obrigatório)
+  @Column({ type: 'float' }) 
   price: number;
 
   @OneToMany(() => RecipeIngredient, (recipeIngredient) => recipeIngredient.recipe, { cascade: true })
