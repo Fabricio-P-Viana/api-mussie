@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In } from 'typeorm';
 import { Order } from '../orders/entities/order.entity';
 import { Ingredient } from 'src/ingredients/entities/ingredient.entity';
-import { Cron } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { User } from 'src/users/entities/user.entity';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bull';
@@ -160,11 +160,12 @@ export class ReportsService {
     };
   }
 
-  @Cron('0 17 * * 5') // Toda sexta às 17:00 (5 = sexta-feira)
+  //@Cron('0 17 * * 5') // Toda sexta às 17:00 (5 = sexta-feira)
+  @Cron(CronExpression.EVERY_10_SECONDS) // Toda sexta às 17:00 (5 = sexta-feira)
   async sendWeeklySalesReports() {
     this.logger.log('Starting weekly sales reports distribution...');
     const { firstDay, lastDay } = this.getWeekDateRange();
-    const reportUrl = `${this.configService.get('APP_URL')}/reports?firstDay=${firstDay}&lastDay=${lastDay}`;
+    const reportUrl = `http://localhost:3000/reports?firstDay=${firstDay}&lastDay=${lastDay}`;
 
     const users = await this.userRepository.find({ 
       where: { receiveReports: true },
@@ -187,7 +188,7 @@ export class ReportsService {
   async sendWeeklyShoppingReports() {
     this.logger.log('Starting weekly shopping reports distribution...');
     const { firstDay, lastDay } = this.getWeekDateRange();
-    const reportUrl = `${this.configService.get('APP_URL')}/shopping-list?firstDay=${firstDay}&lastDay=${lastDay}`;
+    const reportUrl = `http://localhost:3000/shopping-list?firstDay=${firstDay}&lastDay=${lastDay}`;
 
     const users = await this.userRepository.find({ 
       where: { receiveReports: true },
