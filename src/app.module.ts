@@ -14,6 +14,9 @@ import { ReportsModule } from './reports/reports.module';
 import * as path from 'path';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { BullModule } from '@nestjs/bull';
+import { QueuesModule } from './queues/queues.module';
+import { BullBoardModule } from './queues/bull-board.module';
 
 @Module({
   imports: [
@@ -21,7 +24,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
+        type: 'mysql',
         host: configService.get<string>('DB_HOST'),
         port: configService.get<number>('DB_PORT'),
         username: configService.get<string>('DB_USERNAME'),
@@ -29,6 +32,17 @@ import { ScheduleModule } from '@nestjs/schedule';
         database: configService.get<string>('DB_DATABASE'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true,
+      }),
+      inject: [ConfigService],
+    }),
+    
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        redis: {
+          host: configService.get('REDIS_HOST'),
+          port: configService.get('REDIS_PORT'),
+        },
       }),
       inject: [ConfigService],
     }),
@@ -44,6 +58,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     UploadsModule,
     ReportsModule,
     NotificationsModule,
+    QueuesModule,
+    BullBoardModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
