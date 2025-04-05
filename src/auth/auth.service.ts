@@ -8,7 +8,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { MailService } from './mail.service';
 import { v4 as uuidv4 } from 'uuid';
 import { UpdateUserDto } from '../users/dto/update-user.dto';
