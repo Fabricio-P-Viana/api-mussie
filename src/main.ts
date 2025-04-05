@@ -57,5 +57,6 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`API rodando em http://localhost:${port}`);
   console.log(`Documentação Swagger disponível em http://localhost:${port}/api`);
+  console.log(`Bull-Board disponível em http://localhost:${port}/admin/queues`);
 }
 bootstrap();
