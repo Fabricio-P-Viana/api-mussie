@@ -58,5 +58,6 @@ async function bootstrap() {
   console.log(`API rodando em http://localhost:${port}`);
   console.log(`Documentação Swagger disponível em http://localhost:${port}/api`);
   console.log(`Bull-Board disponível em http://localhost:${port}/admin/queues`);
+  console.log(`pgadmin disponível em http://localhost:5050/ email=admin@admin.com password=admin`);
 }
 bootstrap();
