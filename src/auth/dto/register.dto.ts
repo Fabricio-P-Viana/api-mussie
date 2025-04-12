@@ -28,4 +28,8 @@ export class RegisterDto {
   @Matches(/^\+\d{10,15}$/, { message: 'O telefone deve estar no formato E.164 (ex.: +5511999999999)' })
   @ApiProperty({ description: 'Telefone do usuário', example: '+5511999999999', required: false })
   phone?: string;
+
+  @IsOptional()
+  @ApiProperty({ description: 'Receber relatórios semanais', example: true, required: false })
+  receiveReports?: boolean;
 }

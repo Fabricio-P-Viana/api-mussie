@@ -104,16 +104,52 @@ export class IngredientsService {
     await this.stockTransactionRepository.save(transaction);
   }
 
-  async adjustVariableWasteFactor(id: number, realStock: number): Promise<Ingredient | null> {
+  async adjustVariableWasteFactor(
+    id: number, 
+    realStock: number, 
+    totalBaseConsumption?: number
+  ): Promise<Ingredient | null> {
     try {
+      // 1. Validação básica dos parâmetros
+      if (realStock < 0) {
+        throw new BadRequestException('O estoque real não pode ser negativo');
+      }
+  
+      // 2. Buscar o ingrediente
       const ingredient = await this.findOne(id);
-      if (!ingredient) throw new BadRequestException(`Ingrediente com ID ${id} não encontrado`);
+      if (!ingredient) {
+        throw new BadRequestException(`Ingrediente com ID ${id} não encontrado`);
+      }
+  
+      // 3. Validação do estoque teórico
+      if (ingredient.stock === undefined || ingredient.stock === null) {
+        throw new BadRequestException('Estoque teórico do ingrediente não está definido');
+      }
+  
+      // 4. Calcular diferença
       const theoreticalStock = ingredient.stock;
       const difference = theoreticalStock - realStock;
-      const totalBaseConsumption = 1000; // Exemplo fixo
-      const adjustment = difference / totalBaseConsumption;
+  
+      // 5. Usar valor padrão se totalBaseConsumption não for fornecido
+      const baseConsumption = totalBaseConsumption ?? 1000;
+      if (baseConsumption <= 0) {
+        throw new BadRequestException('O consumo base total deve ser maior que zero');
+      }
+  
+      // 6. Calcular ajuste
+      const adjustment = difference / baseConsumption;
+  
+      // 7. Calcular novo fator com pesos (70% fator atual, 30% ajuste)
       const newVariableWasteFactor = ingredient.variableWasteFactor * 0.7 + adjustment * 0.3;
+  
+      // 8. Validar se o novo fator é válido (não negativo, por exemplo)
+      if (newVariableWasteFactor < 0) {
+        throw new BadRequestException('O cálculo resultou em um fator de perda inválido (negativo)');
+      }
+  
+      // 9. Atualizar e retornar
       return await this.update(id, { variableWasteFactor: newVariableWasteFactor });
+      
     } catch (error) {
       console.error('Erro ao ajustar fator de perda variável:', error);
       if (error instanceof BadRequestException) throw error;

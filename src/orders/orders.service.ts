@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { And, Between, In, IsNull, LessThanOrEqual, Not, Repository } from 'typeorm';
+import { And, Between, In, IsNull, Not, Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
@@ -176,31 +176,29 @@ export class OrdersService {
     };
   }
   
-  async saveProductionProgress(orderId: number, progressData: any, userId: number): Promise<void> {
-    const order = await this.findOne(orderId, userId);
-    
-    await this.orderRepository.manager.transaction(async (manager) => {
-      for (const step of progressData.steps) {
-        const orderRecipe = order.orderRecipes.find(or => or.id === step.orderRecipeId);
+  async saveProductionProgress(orderId: number, progressData: any, userId: number): Promise<Order> {
+    return this.orderRepository.manager.transaction(async (manager) => {
+      const order = await this.findOne(orderId, userId);
+      
+      // Atualiza status das receitas
+      for (const recipeUpdate of progressData.recipeUpdates) {
+        const orderRecipe = order.orderRecipes.find(or => or.recipe.id === recipeUpdate.recipeId);
         if (!orderRecipe) continue;
         
-        // Atualiza o status da receita se todos os ingredientes estiverem preparados
-        const allIngredientsPrepared = step.ingredients.every((i: any) => i.prepared);
-        if (allIngredientsPrepared) {
-          orderRecipe.status = 'completed';
-        } else if (orderRecipe.status === 'pending') {
-          orderRecipe.status = 'in_progress';
-        }
-        
+        orderRecipe.status = recipeUpdate.status;
         await manager.getRepository(OrderRecipe).save(orderRecipe);
       }
-      
+  
       // Verifica se todas as receitas estão completas
       const allRecipesCompleted = order.orderRecipes.every(or => or.status === 'completed');
       if (allRecipesCompleted) {
         order.status = 'completed';
-        await manager.save(order);
+      } else if (progressData.status) {
+        order.status = progressData.status;
       }
+      
+      await manager.save(order);
+      return this.findOne(orderId, userId);
     });
   }
   

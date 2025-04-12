@@ -1,16 +1,27 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In } from 'typeorm';
 import { Order } from '../orders/entities/order.entity';
 import { Ingredient } from 'src/ingredients/entities/ingredient.entity';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { User } from 'src/users/entities/user.entity';
+import { ConfigService } from '@nestjs/config';
+import { Queue } from 'bull';
+import { InjectQueue } from '@nestjs/bull';
 
 @Injectable()
 export class ReportsService {
+  private readonly logger = new Logger(ReportsService.name);
+
   constructor(
     @InjectRepository(Order)
-    private orderRepository: Repository<Order>,
+    private readonly orderRepository: Repository<Order>,
     @InjectRepository(Ingredient)
-    private ingredientRepository: Repository<Ingredient>,
+    private readonly ingredientRepository: Repository<Ingredient>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    private readonly configService: ConfigService,
+    @InjectQueue('mailQueue') private readonly mailQueue: Queue,
   ) {}
 
   async getOrderHistory(userId: number, startDate: string, endDate: string): Promise<Order[]> {
@@ -135,5 +146,64 @@ export class ReportsService {
       }, 0);
       return sum + (order.status === 'completed' ? orderRevenue : 0);
     }, 0);
+  }
+
+  private getWeekDateRange(): { firstDay: string; lastDay: string } {
+    const now = new Date();
+    const firstDay = new Date(now.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1)));
+    const lastDay = new Date(firstDay);
+    lastDay.setDate(lastDay.getDate() + 6);
+
+    return {
+      firstDay: firstDay.toISOString().split('T')[0],
+      lastDay: lastDay.toISOString().split('T')[0],
+    };
+  }
+
+  @Cron('0 17 * * 5') // Toda sexta às 17:00 (5 = sexta-feira)
+  //@Cron(CronExpression.EVERY_10_SECONDS) // Toda sexta às 17:00 (5 = sexta-feira)
+  async sendWeeklySalesReports() {
+    this.logger.log('Starting weekly sales reports distribution...');
+    const { firstDay, lastDay } = this.getWeekDateRange();
+    const reportUrl = `http://localhost:3000/reports?firstDay=${firstDay}&lastDay=${lastDay}`;
+
+    const users = await this.userRepository.find({ 
+      where: { receiveReports: true },
+      select: ['id', 'email'],
+    });
+
+    for (const user of users) {
+      await this.mailQueue.add('sendSalesReport', {
+        email: user.email,
+        reportUrl,
+        userId: user.id,
+      }, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+      });
+    }
+  }
+
+  @Cron('0 3 * * 1') // Toda segunda-feira às 03:00
+  async sendWeeklyShoppingReports() {
+    this.logger.log('Starting weekly shopping reports distribution...');
+    const { firstDay, lastDay } = this.getWeekDateRange();
+    const reportUrl = `http://localhost:3000/shopping-list?firstDay=${firstDay}&lastDay=${lastDay}`;
+
+    const users = await this.userRepository.find({ 
+      where: { receiveReports: true },
+      select: ['id', 'email'],
+    });
+
+    for (const user of users) {
+      await this.mailQueue.add('sendShoppingReport', {
+        email: user.email,
+        reportUrl,
+        userId: user.id,
+      }, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+      });
+    }
   }
 }

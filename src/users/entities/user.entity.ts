@@ -51,4 +51,7 @@ export class User {
 
   @OneToMany(() => Order, (order) => order.user)
   orders: Order[];
+
+  @Column({ name: 'receive_reports', default: true })
+  receiveReports: boolean;
 }
