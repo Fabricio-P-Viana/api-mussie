@@ -17,38 +17,36 @@ export class OrdersService {
   ) {}
 
   async create(createOrderDto: CreateOrderDto, user: User): Promise<Order | null> {
+    // Cria a ordem incluindo o total vindo do frontend
     const order = this.orderRepository.create({ 
       user, 
-      deliveryDate: createOrderDto.deliveryDate ? new Date(createOrderDto.deliveryDate) : undefined 
+      deliveryDate: createOrderDto.deliveryDate ? new Date(createOrderDto.deliveryDate) : undefined,
+      total: createOrderDto.total
     });
+    
     const savedOrder = await this.orderRepository.save(order);
   
-    let totalCost = 0;
+    // Processa os itens do pedido (sem recalcular o total)
     const orderRecipes = await Promise.all(
       createOrderDto.recipes.map(async (recipeInput) => {
         const recipe = await this.recipesService.findOne(recipeInput.recipeId, user.id);
         if (!recipe) throw new BadRequestException(`Receita ${recipeInput.recipeId} não encontrada`);
   
-        const recipeCost = recipe.price * recipeInput.servings + (recipeInput.extraPrice || 0);
-        totalCost += recipeCost;
-  
         return {
           order: savedOrder,
           recipe,
-          servings: recipeInput.servings,
-          extraPrice: recipeInput.extraPrice,
-          observations: recipeInput.observations,
-          unitPrice: recipe.price || 0,
+          servings: recipe.servings,
+          extraPrice: recipeInput.extraPrice || 0,
+          observations: recipeInput.observations || '',
+          unitPrice: recipe.price,
           status: 'pending',
         } as OrderRecipe;
       }),
     );
   
-    savedOrder.total = totalCost;
-    await this.orderRepository.save(savedOrder);
     await this.orderRepository.manager.getRepository(OrderRecipe).save(orderRecipes);
     return this.findOne(savedOrder.id, user.id);
-  }
+}
 
   async findOne(id: number, userId: number): Promise<Order> {
     const order = await this.orderRepository.findOne({
