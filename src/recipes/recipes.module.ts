@@ -6,10 +6,11 @@ import { Recipe } from './entities/recipe.entity';
 import { RecipeIngredient } from './entities/recipe-ingredient.entity';
 import { IngredientsModule } from '../ingredients/ingredients.module';
 import { UploadsModule } from '../uploads/uploads.module';
+import { StockTransaction } from 'src/ingredients/entities/stock-transaction.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Recipe, RecipeIngredient]),
+    TypeOrmModule.forFeature([Recipe, RecipeIngredient,StockTransaction]),
     IngredientsModule,
     UploadsModule,
   ],
