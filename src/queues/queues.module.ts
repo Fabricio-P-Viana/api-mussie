@@ -1,4 +1,3 @@
-// queues/queues.module.ts
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { MailProcessor } from './mail.processor';

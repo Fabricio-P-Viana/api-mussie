@@ -1,6 +1,4 @@
-// bull-board.module.ts
 import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bull';
 import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { ExpressAdapter } from '@bull-board/express';

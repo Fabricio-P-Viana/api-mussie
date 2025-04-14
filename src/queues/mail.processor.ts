@@ -1,4 +1,3 @@
-// queues/mail.processor.ts
 import { Processor, Process } from '@nestjs/bull';
 import { Job } from 'bull';
 import { Logger } from '@nestjs/common';
@@ -17,7 +16,7 @@ export class MailProcessor {
       this.logger.log(`Email sent to ${job.data.email}`);
     } catch (error) {
       this.logger.error(`Failed to send email to ${job.data.email}`, error.stack);
-      throw error; // Isso fará com que o Bull tente novamente
+      throw error;
     }
   }
 
