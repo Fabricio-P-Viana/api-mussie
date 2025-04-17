@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Query, UseInterceptors, UploadedFile, ParseIntPipe, BadRequestException, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Query, UseInterceptors, UploadedFile, ParseIntPipe, BadRequestException, Put, Logger } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RecipesService } from './recipes.service';
@@ -16,6 +16,7 @@ import { extname } from 'path';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth('JWT-auth')
 export class RecipesController {
+  private readonly logger = new Logger(RecipesService.name);
   constructor(private readonly recipesService: RecipesService, private readonly uploadsService: UploadsService) {}
 
   @Post()
@@ -66,6 +67,7 @@ export class RecipesController {
     @UploadedFile() image: Express.Multer.File | undefined,
     @CurrentUser() user: { userId: number; email: string },
   ) {
+    this.logger.log(`Criando receita para o usuário ${user.userId}`);
     console.log('Body recebido:', body);
     console.log('Imagem recebida:', image);
   
@@ -109,6 +111,7 @@ export class RecipesController {
     @Query(new PaginationPipe()) pagination: { skip: number; take: number },
     @CurrentUser() user: { userId: number; email: string },
   ) {
+    this.logger.log(`Listando receitas do usuário ${user.userId}`);
     return this.recipesService.findAll(pagination, user.userId);
   }
 
@@ -163,6 +166,7 @@ export class RecipesController {
     @UploadedFile() image: Express.Multer.File | undefined,
     @CurrentUser() user: { userId: number; email: string },
   ) {
+    this.logger.log(`Atualizando receita com ID ${id} para o usuário ${user.userId}`);
     console.log('Body recebido:', body);
     console.log('Imagem recebida:', image);
 
@@ -208,6 +212,7 @@ export class RecipesController {
     @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
     @CurrentUser() user: { userId: number; email: string },
   ) {
+    this.logger.log(`Buscando receita com ID ${id} do usuário ${user.userId}`);
     return this.recipesService.findOne(id, user.userId);
   }
 
@@ -222,6 +227,7 @@ export class RecipesController {
     @Body('servings', new ParseIntPipe({ errorHttpStatusCode: 400 })) servings: number,
     @CurrentUser() user: { userId: number; email: string },
   ) {
+    this.logger.log(`Executando receita com ID ${id} para o usuário ${user.userId}`);
     return this.recipesService.executeRecipe(id, servings, user.userId);
   }
 }

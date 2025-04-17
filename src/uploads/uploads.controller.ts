@@ -1,4 +1,4 @@
-import { Controller, Post, UploadedFile, UseInterceptors, UseGuards } from '@nestjs/common';
+import { Controller, Post, UploadedFile, UseInterceptors, UseGuards, Logger } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadsService } from './uploads.service';
 import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
@@ -10,6 +10,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth('JWT-auth')
 export class UploadsController {
+  private readonly logger = new Logger(UploadsService.name);
   constructor(private readonly uploadsService: UploadsService) {}
 
   @Post('user')
@@ -30,6 +31,7 @@ export class UploadsController {
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() user: { userId: number; email: string },
   ) {
+    this.logger.log(`Fazendo upload da imagem de perfil para o usuário ${user.userId}`);
     const filePath = await this.uploadsService.saveImage(file, 'user');
     return { imageUrl: filePath };
   }
@@ -52,6 +54,7 @@ export class UploadsController {
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() user: { userId: number; email: string },
   ) {
+    this.logger.log(`Fazendo upload da imagem para receita do usuário ${user.userId}`);
     const filePath = await this.uploadsService.saveImage(file, 'recipe');
     return { imageUrl: filePath };
   }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, UseGuards, Query, ParseIntPipe, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, UseGuards, Query, ParseIntPipe, Patch, Logger } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -13,6 +13,7 @@ import { User } from 'src/users/entities/user.entity';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth('JWT-auth')
 export class OrdersController {
+  private readonly logger = new Logger(OrdersService.name);
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
@@ -23,6 +24,7 @@ export class OrdersController {
     @Body() createOrderDto: CreateOrderDto,
     @CurrentUser() user: { userId: number; email: string },
   ) {
+    this.logger.log(`Criando pedido para o usuário ${user.userId}`);
     return this.ordersService.create(createOrderDto, { id: user.userId } as User);
   }
 
@@ -35,6 +37,7 @@ export class OrdersController {
     @Query(new PaginationPipe()) pagination: { skip: number; take: number },
     @CurrentUser() user: { userId: number; email: string },
   ) {
+    this.logger.log(`Listando pedidos do usuário ${user.userId}`);
     return this.ordersService.findAll(pagination, user.userId);
   }
 
@@ -48,6 +51,7 @@ export class OrdersController {
     @Query('startDate') startDate?: Date,
     @Query('endDate') endDate?: Date
   ) {
+    this.logger.log(`Obtendo pedidos pendentes do usuário ${user.userId}`);
     return this.ordersService.findPendingOrders(user.userId, startDate, endDate);
   }
 
@@ -60,6 +64,7 @@ export class OrdersController {
     @Query(new PaginationPipe()) pagination: { skip: number; take: number },
     @CurrentUser() user: { userId: number; email: string },
   ) {
+    this.logger.log(`Listando histórico de pedidos do usuário ${user.userId}`);
     return this.ordersService.findHistory(pagination, user.userId);
   }
 
@@ -73,6 +78,7 @@ export class OrdersController {
     @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
     @CurrentUser() user: { userId: number; email: string },
   ) {
+    this.logger.log(`Buscando pedido com ID ${id} do usuário ${user.userId}`);
     return this.ordersService.findOne(id, user.userId);
   }
 
@@ -86,6 +92,7 @@ export class OrdersController {
     @Body() updateOrderDto: UpdateOrderDto,
     @CurrentUser() user: { userId: number; email: string },
   ) {
+    this.logger.log(`Atualizando pedido com ID ${id} do usuário ${user.userId}`);
     return this.ordersService.update(id, updateOrderDto, user.userId);
   }
 
@@ -98,6 +105,7 @@ async getProductionProgress(
   @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
   @CurrentUser() user: { userId: number; email: string },
 ) {
+  this.logger.log(`Buscando progresso de produção do pedido ${id} para o usuário ${user.userId}`);
   return this.ordersService.getProductionProgress(id, user.userId);
 }
 
@@ -111,6 +119,7 @@ async saveProductionProgress(
   @Body() progressData: any,
   @CurrentUser() user: { userId: number; email: string },
 ) {
+  this.logger.log(`Salvando progresso de produção do pedido ${id} para o usuário ${user.userId}`);
   return this.ordersService.saveProductionProgress(id, progressData, user.userId);
 }
 
@@ -123,6 +132,7 @@ async completeProduction(
   @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
   @CurrentUser() user: { userId: number; email: string },
 ) {
+  this.logger.log(`Marcando pedido ${id} como concluído na produção para o usuário ${user.userId}`);
   return this.ordersService.completeProduction(id, user.userId);
 }
 }

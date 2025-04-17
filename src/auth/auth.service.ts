@@ -89,7 +89,7 @@ export class AuthService {
         throw new UnauthorizedException('Credenciais inválidas');
       }
       const payload = { email: user.email, sub: user.id };
-      const accessToken = this.jwtService.sign(payload);
+      const accessToken = this.jwtService.sign(payload, { expiresIn: '2h' });
       const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
       await this.userRepository.update(user.id, { refreshToken });
       return { access_token: accessToken, refresh_token: refreshToken, user_id: user.id };

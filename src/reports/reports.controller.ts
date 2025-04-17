@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Logger, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ReportsService } from './reports.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
@@ -9,6 +9,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth('JWT-auth')
 export class ReportsController {
+  private readonly logger = new Logger(ReportsService.name);
   constructor(private readonly reportsService: ReportsService) {}
 
   @Get('orders')
@@ -21,6 +22,7 @@ export class ReportsController {
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
   ) {
+    this.logger.log(`Obtendo histórico de pedidos do usuário ${user.userId}`);
     return this.reportsService.getOrderHistory(user.userId, startDate, endDate);
   }
 
@@ -34,6 +36,7 @@ export class ReportsController {
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
   ) {
+    this.logger.log(`Obtendo receita do usuário ${user.userId}`);
     return this.reportsService.getRevenueByPeriod(user.userId, startDate, endDate);
   }
 
@@ -47,6 +50,7 @@ export class ReportsController {
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
   ) {
+    this.logger.log(`Obtendo receitas populares do usuário ${user.userId}`);
     return this.reportsService.getPopularRecipes(user.userId, startDate, endDate);
   }
 
@@ -56,6 +60,7 @@ export class ReportsController {
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
   ) {
+    this.logger.log(`Obtendo lista de compras do usuário ${user.userId}`);
     return await this.reportsService.getShoppingList(user.userId, startDate, endDate);
   }
 }

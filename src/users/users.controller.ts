@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Logger, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -7,6 +7,7 @@ import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
+  private readonly logger = new Logger(AuthService.name);
   constructor(private readonly authService: AuthService) {}
 
   @Get('me') // Novo endpoint para obter dados do usuário autenticado
@@ -15,6 +16,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Dados do usuário retornados com sucesso' })
   @ApiResponse({ status: 401, description: 'Não autorizado' })
   async getCurrentUser(@CurrentUser() user: { userId: number; email: string }) {
+    this.logger.log(`Obtendo dados do usuário ${user.userId}`);
     const userData = await this.authService.getUserProfile(user.userId); // Método a ser criado
     return {
       id: userData.id,
@@ -31,6 +33,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Portfólio retornado com sucesso' })
   @ApiResponse({ status: 400, description: 'Usuário não encontrado' })
   async getPortfolio(@Param('userId', ParseIntPipe) userId: number) {
+    this.logger.log(`Obtendo portfólio do usuário ${userId}`);
     return this.authService.getPortfolio(userId);
   }
 }

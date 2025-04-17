@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseInterceptors, UploadedFile, UseGuards, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Post, Body, UseInterceptors, UploadedFile, UseGuards, Get, Param, ParseIntPipe, Logger } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -17,6 +17,7 @@ import { extname } from 'path';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthService.name);
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
@@ -25,6 +26,7 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'Usuário cadastrado', type: Object })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   register(@Body() registerDto: RegisterDto) {
+    this.logger.log('Registrando novo usuário');
     return this.authService.register(registerDto);
   }
 
@@ -34,6 +36,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Login bem-sucedido', type: Object })
   @ApiResponse({ status: 401, description: 'Credenciais inválidas' })
   login(@Body() loginDto: LoginDto) {
+    this.logger.log('Realizando login');
     return this.authService.login(loginDto);
   }
 
@@ -43,6 +46,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'E-mail enviado' })
   @ApiResponse({ status: 400, description: 'E-mail inválido' })
   forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    this.logger.log('Solicitando redefinição de senha');
     return this.authService.forgotPassword(forgotPasswordDto);
   }
 
@@ -53,6 +57,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Token inválido ou expirado' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    this.logger.log('Redefinindo senha');
     return this.authService.resetPassword(resetPasswordDto);
   }
 
@@ -95,6 +100,7 @@ export class AuthController {
     @CurrentUser() user: { userId: number; email: string },
     @UploadedFile() file: Express.Multer.File,
   ) {
+    this.logger.log(`Fazendo upload da imagem de perfil para o usuário ${user.userId}`);
     return this.authService.uploadProfileImage(user.userId, file);
   }
 
@@ -110,6 +116,7 @@ export class AuthController {
     @CurrentUser() user: { userId: number; email: string },
     @Body() updateUserDto: UpdateUserDto,
   ) {
+    this.logger.log(`Atualizando perfil do usuário ${user.userId}`);
     return this.authService.updateProfile(user.userId, updateUserDto);
   }
 
@@ -119,6 +126,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Tokens atualizados', type: Object })
   @ApiResponse({ status: 401, description: 'Refresh token inválido ou expirado' })
   refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
+    this.logger.log('Atualizando refresh token');
     return this.authService.refreshToken(refreshTokenDto);
   }
   
@@ -127,6 +135,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Portfólio retornado com sucesso' })
   @ApiResponse({ status: 400, description: 'Usuário não encontrado' })
   async getPortfolio(@Param('userId', ParseIntPipe) userId: number) {
+    this.logger.log(`Obtendo portfólio do usuário ${userId}`);
     return this.authService.getPortfolio(userId);
   }
 }

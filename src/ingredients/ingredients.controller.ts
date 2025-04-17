@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, UseGuards, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, UseGuards, Query, ParseIntPipe, Logger } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { IngredientsService } from './ingredients.service';
 import { CreateIngredientDto } from './dto/create-ingredient.dto';
@@ -14,6 +14,7 @@ import { CreateStockEntryDto } from './dto/create-stock-entry.dto';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth('JWT-auth')
 export class IngredientsController {
+  private readonly logger = new Logger(IngredientsService.name);
   constructor(private readonly ingredientsService: IngredientsService) {}
 
   @Post()
@@ -22,6 +23,7 @@ export class IngredientsController {
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   async create(@Body() createIngredientDto: CreateIngredientDto,
   @CurrentUser() user: { userId: number; email: string }) {
+    this.logger.log(`Criando ingrediente`);
     const ingredient = await this.ingredientsService.create(createIngredientDto,user.userId);
     return { success: true, data: ingredient };
   }
@@ -35,6 +37,7 @@ export class IngredientsController {
     @Query(new PaginationPipe()) pagination: { skip: number; take: number },
     @CurrentUser() user: { userId: number; email: string }, 
   ) {
+    this.logger.log(`Listando ingredientes`);
     const result = await this.ingredientsService.findAll(pagination, user.userId); 
     return { success: true, data: result };
   }
@@ -48,6 +51,7 @@ export class IngredientsController {
     @Query(new PaginationPipe()) pagination: { skip: number; take: number },
     @CurrentUser() user: { userId: number; email: string }, 
   ) {
+    this.logger.log(`Listando ingredientes`);
     const result = await this.ingredientsService.getStockHistory(pagination, user.userId); 
     return { success: true, data: result };
   }
@@ -59,6 +63,7 @@ export class IngredientsController {
   @ApiResponse({ status: 400, description: 'ID inválido' })
   @ApiResponse({ status: 404, description: 'Ingrediente não encontrado' })
   async findOne(@Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number) {
+    this.logger.log(`Buscando ingrediente com ID ${id}`);
     const ingredient = await this.ingredientsService.findOne(id);
     if (!ingredient) throw new NotFoundException('Ingrediente não encontrado');
     return { success: true, data: ingredient };
@@ -74,6 +79,7 @@ export class IngredientsController {
     @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
     @Body() updateIngredientDto: UpdateIngredientDto,
   ) {
+    this.logger.log(`Atualizando ingrediente com ID ${id}`);
     const ingredient = await this.ingredientsService.update(id, updateIngredientDto);
     if (!ingredient) throw new NotFoundException('Ingrediente não encontrado');
     return { success: true, data: ingredient };
@@ -90,6 +96,7 @@ export class IngredientsController {
     @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
     @Body('realStock', new ParseIntPipe({ errorHttpStatusCode: 400 })) realStock: number,
   ) {
+    this.logger.log(`Ajustando fator de perda variável do ingrediente com ID ${id}`);
     if (realStock < 0) throw new BadRequestException('O estoque real não pode ser negativo');
     const ingredient = await this.ingredientsService.adjustVariableWasteFactor(id, realStock);
     if (!ingredient) throw new NotFoundException('Ingrediente não encontrado');
@@ -101,6 +108,7 @@ export class IngredientsController {
   @ApiResponse({ status: 201, description: 'Entrada de estoque registrada com sucesso' })
   @ApiResponse({ status: 400, description: 'Erro na requisição' })
   async addStockEntry(@Body() createStockEntryDto: CreateStockEntryDto) {
+    this.logger.log(`Adicionando entrada de estoque`);
     const updatedIngredient = await this.ingredientsService.addStockEntry(createStockEntryDto);
     return { success: true, data: updatedIngredient };
   }
