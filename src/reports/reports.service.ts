@@ -161,7 +161,7 @@ export class ReportsService {
   }
 
   @Cron('0 17 * * 5') // Toda sexta às 17:00 (5 = sexta-feira)
-  //@Cron(CronExpression.EVERY_10_SECONDS) // Toda sexta às 17:00 (5 = sexta-feira)
+  // @Cron(CronExpression.EVERY_10_SECONDS)
   async sendWeeklySalesReports() {
     this.logger.log('Starting weekly sales reports distribution...');
     const { firstDay, lastDay } = this.getWeekDateRange();
