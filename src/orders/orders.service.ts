@@ -48,14 +48,19 @@ export class OrdersService {
     return this.findOne(savedOrder.id, user.id);
 }
 
-  async findOne(id: number, userId: number): Promise<Order> {
-    const order = await this.orderRepository.findOne({
-      where: { id, user: { id: userId } },
-      relations: ['orderRecipes', 'orderRecipes.recipe','orderRecipes.recipe.ingredients'],
-    });
-    if (!order) throw new BadRequestException('Pedido não encontrado');
-    return order;
-  }
+async findOne(id: number, userId: number): Promise<Order> {
+  const order = await this.orderRepository.findOne({
+    where: { id, user: { id: userId } },
+    relations: [
+      'orderRecipes',
+      'orderRecipes.recipe',
+      'orderRecipes.recipe.ingredients',
+      'orderRecipes.recipe.ingredients.ingredient', // Inclui nome e unidade de cada ingrediente
+    ],
+  });
+  if (!order) throw new BadRequestException('Pedido não encontrado');
+  return order;
+}
   
   async findAll(pagination: { skip: number; take: number }, userId: number): Promise<{ data: Order[]; total: number }> {
     const [data, total] = await this.orderRepository.findAndCount({
