@@ -7,6 +7,7 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { RecipesService } from '../recipes/recipes.service';
 import { User } from '../users/entities/user.entity';
 import { OrderRecipe } from './entities/order-recipe.entity';
+import { CheckProductionResponseDto } from './dto/check-production.dto';
 
 @Injectable()
 export class OrdersService {
@@ -228,5 +229,80 @@ async findOne(id: number, userId: number): Promise<Order> {
     });
     
     return this.findOne(orderId, userId);
+  }
+
+  async checkProductionFeasibility(orderId: number, userId: number): Promise<CheckProductionResponseDto> {
+    const order = await this.findOne(orderId, userId);
+    
+    // Objeto para acumular os ingredientes necessários
+    const requiredIngredients = new Map<number, {
+      ingredientId: number;
+      name: string;
+      totalAmount: number;
+      unit: string;
+      currentStock: number;
+    }>();
+  
+    // Verificar cada receita no pedido
+    for (const orderRecipe of order.orderRecipes) {
+      const recipe = orderRecipe.recipe;
+      const servingsFactor = orderRecipe.servings / recipe.servings;
+  
+      for (const recipeIngredient of recipe.ingredients) {
+        const ingredient = recipeIngredient.ingredient;
+        
+        // Calcular quantidade necessária considerando perdas
+        const baseAmount = recipeIngredient.amount * servingsFactor;
+        const fixedWaste = baseAmount * ingredient.fixedWasteFactor;
+        const variableWaste = baseAmount * ingredient.variableWasteFactor;
+        const totalNeeded = baseAmount + fixedWaste + variableWaste;
+  
+        if (requiredIngredients.has(ingredient.id)) {
+          // Se já existe no mapa, soma a quantidade
+          const existing = requiredIngredients.get(ingredient.id);
+
+          if (!existing) throw new InternalServerErrorException('Erro ao calcular ingredientes necessários');
+          
+          existing.totalAmount += totalNeeded;
+        } else {
+          // Adiciona novo ingrediente ao mapa
+          requiredIngredients.set(ingredient.id, {
+            ingredientId: ingredient.id,
+            name: ingredient.name,
+            totalAmount: totalNeeded,
+            unit: ingredient.unity,
+            currentStock: ingredient.stock,
+          });
+        }
+      }
+    }
+  
+    // Verificar se há estoque suficiente para todos os ingredientes
+    let canProduce = true;
+    const shoppingList: Array<{
+      ingredientId: number;
+      name: string;
+      amountNeeded: number;
+      unit: string;
+      currentStock: number;
+    }> = [];
+  
+    requiredIngredients.forEach((ingredient) => {
+      if (ingredient.currentStock < ingredient.totalAmount) {
+        canProduce = false;
+        shoppingList.push({
+          ingredientId: ingredient.ingredientId,
+          name: ingredient.name,
+          amountNeeded: Number((ingredient.totalAmount - ingredient.currentStock).toFixed(2)),
+          unit: ingredient.unit,
+          currentStock: Number(ingredient.currentStock.toFixed(2)),
+        });
+      }
+    });
+  
+    return {
+      canProduce,
+      shoppingList: canProduce ? undefined : shoppingList,
+    };
   }
 }

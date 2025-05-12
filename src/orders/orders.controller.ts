@@ -7,6 +7,7 @@ import { PaginationPipe } from '../common/pipes/pagination.pipe';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from 'src/users/entities/user.entity';
+import { CheckProductionResponseDto } from './dto/check-production.dto';
 
 @ApiTags('orders')
 @Controller('orders')
@@ -134,5 +135,21 @@ async completeProduction(
 ) {
   this.logger.log(`Marcando pedido ${id} como concluído na produção para o usuário ${user.userId}`);
   return this.ordersService.completeProduction(id, user.userId);
+}
+
+@Get(':id/check-production')
+@ApiOperation({ summary: 'Verifica se é possível produzir todo o pedido e retorna lista de compras se necessário' })
+@ApiParam({ name: 'id', type: Number, description: 'ID do pedido' })
+@ApiResponse({ 
+  status: 200, 
+  description: 'Resultado da verificação de produção',
+  type: CheckProductionResponseDto,
+})
+async checkProductionFeasibility(
+  @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
+  @CurrentUser() user: { userId: number; email: string },
+) {
+  this.logger.log(`Verificando viabilidade de produção para o pedido ${id} do usuário ${user.userId}`);
+  return this.ordersService.checkProductionFeasibility(id, user.userId);
 }
 }

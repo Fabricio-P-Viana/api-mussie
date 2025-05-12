@@ -157,4 +157,20 @@ export class NotificationsService {
       }
     }
   }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT) // Executa diariamente à meia-noite
+  async deleteOldNotifications() {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const result = await this.notificationRepository
+      .createQueryBuilder()
+      .delete()
+      .where('createdAt < :sevenDaysAgo', { sevenDaysAgo })
+      .execute();
+
+    this.logger.log(
+      `Removed ${result.affected ?? 0} notifications older than ${sevenDaysAgo.toISOString()}`,
+    );
+  }
 }
