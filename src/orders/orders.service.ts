@@ -17,6 +17,8 @@ export class OrdersService {
   ) {}
 
   async create(createOrderDto: CreateOrderDto, user: User): Promise<Order | null> {
+    console.log(createOrderDto);
+    
     // Cria a ordem incluindo o total vindo do frontend
     const order = this.orderRepository.create({ 
       user, 
@@ -35,7 +37,7 @@ export class OrdersService {
         return {
           order: savedOrder,
           recipe,
-          servings: recipe.servings,
+          servings: recipeInput.servings,
           extraPrice: recipeInput.extraPrice || 0,
           observations: recipeInput.observations || '',
           unitPrice: recipe.price,
