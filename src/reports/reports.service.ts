@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In } from 'typeorm';
 import { Order } from '../orders/entities/order.entity';
 import { Ingredient } from 'src/ingredients/entities/ingredient.entity';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { User } from 'src/users/entities/user.entity';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bull';
@@ -61,7 +61,7 @@ export class ReportsService {
       where: {
         user: { id: userId },
         createdAt: Between(new Date(startDate), new Date(endDate)),
-        status: In(['pending', 'in_progress']), // Filtro adicionado
+        status: In(['pending', 'in_progress']),
       },
       relations: [
         'orderRecipes',
@@ -123,7 +123,7 @@ export class ReportsService {
     requiredIngredients.forEach((req) => {
       const stockItem = currentStock.find((stock) => stock.name === req.name);
       const stockAmount = stockItem ? stockItem.stock : 0;
-      const amountToBuy = Math.max(req.amount - stockAmount, 0); // Evita valores negativos
+      const amountToBuy = Math.max(req.amount - stockAmount, 0);
       if (amountToBuy > 0) {
         shoppingList.push({
           name: req.name,
