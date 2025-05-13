@@ -56,11 +56,19 @@ export class ReportsService {
     currentStock: { name: string; stock: number; unit: string }[];
     shoppingList: { name: string; amountToBuy: number; unit: string }[];
   }> {
+
+    // Ajusta startDate para início do dia e endDate para 23:59
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    
     // Filtrar apenas pedidos 'pending' e 'in_progress'
     const orders = await this.orderRepository.find({
       where: {
         user: { id: userId },
-        createdAt: Between(new Date(startDate), new Date(endDate)),
+        createdAt: Between(new Date(start), new Date(end)),
         status: In(['pending', 'in_progress']),
       },
       relations: [
@@ -69,6 +77,26 @@ export class ReportsService {
         'orderRecipes.recipe.ingredients',
         'orderRecipes.recipe.ingredients.ingredient',
       ],
+      select: {
+        id: true,
+        status: true,
+        orderRecipes: {
+          id: true,
+          servings: true,
+          recipe: {
+            id: true,
+            servings: true,
+            ingredients: {
+              amount: true,
+              ingredient: {
+                id: true,
+                name: true,
+                unity: true
+              }
+            }
+          }
+        }
+      }
     });
   
     if (!Array.isArray(orders)) {
