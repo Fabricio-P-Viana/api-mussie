@@ -55,7 +55,7 @@ export class ReportsService {
     userId: number,
     startDate: string,
     endDate: string,
-    includeMinimumStock: boolean = true
+    includeMinimumStock: boolean = false
   ): Promise<{
     requiredIngredients: { name: string; amount: number; unit: string }[];
     currentStock: { name: string; stock: number; unit: string; minimumStock?: number }[];
