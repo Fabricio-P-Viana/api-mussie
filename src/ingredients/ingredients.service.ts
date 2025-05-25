@@ -6,6 +6,7 @@ import { CreateIngredientDto } from './dto/create-ingredient.dto';
 import { UpdateIngredientDto } from './dto/update-ingredient.dto';
 import { StockTransaction, TransactionType } from './entities/stock-transaction.entity';
 import { CreateStockEntryDto } from './dto/create-stock-entry.dto';
+import { RegisterWasteDto } from './dto/register-waste.dto';
 
 @Injectable()
 export class IngredientsService {
@@ -193,4 +194,46 @@ export class IngredientsService {
       },
     });
   }
+
+async registerWaste(registerWasteDto: RegisterWasteDto, userId: number) {
+    const { ingredientId, amount, description, recipeId, orderId } = registerWasteDto;
+
+    // 1. Verificar se o ingrediente existe e pertence ao usuário
+    const ingredient = await this.ingredientRepository.findOne({
+      where: { id: ingredientId, user: { id: userId } },
+      relations: ['user']
+    });
+
+    if (!ingredient) {
+      throw new BadRequestException('Ingrediente não encontrado ou não pertence ao usuário');
+    }
+
+    // 2. Validar se a perda deixará o estoque negativo
+    if (ingredient.stock - amount < 0) {
+      throw new BadRequestException(
+        `Não é possível registrar a perda. O estoque atual é ${ingredient.stock} ${ingredient.unity || 'unidades'} e você tentou registrar uma perda de ${amount} ${ingredient.unity || 'unidades'}.`
+      );
+    }
+
+    // 3. Registrar a transação de saída (perda)
+    const transactionDescription = description || 
+      `Perda registrada${recipeId ? ' na receita ' + recipeId : ''}${orderId ? ' do pedido ' + orderId : ''}`;
+
+    await this.recordStockTransaction(
+      ingredientId,
+      TransactionType.EXIT,
+      amount,
+      transactionDescription
+    );
+
+    // 4. Atualizar o estoque do ingrediente
+    ingredient.stock -= amount;
+    await this.ingredientRepository.save(ingredient);
+
+    if (ingredient.minimumStock && ingredient.stock < ingredient.minimumStock) {
+      console.warn(`Atenção: O estoque do ingrediente ${ingredient.name} ficou abaixo do mínimo após a perda.`);
+    }
+
+    return this.findOne(ingredientId);
+}
 }

@@ -8,6 +8,7 @@ import { PaginationPipe } from '../common/pipes/pagination.pipe';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CreateStockEntryDto } from './dto/create-stock-entry.dto';
+import { RegisterWasteDto } from './dto/register-waste.dto';
 
 @ApiTags('ingredients')
 @Controller('ingredients')
@@ -111,5 +112,18 @@ export class IngredientsController {
     this.logger.log(`Adicionando entrada de estoque`);
     const updatedIngredient = await this.ingredientsService.addStockEntry(createStockEntryDto);
     return { success: true, data: updatedIngredient };
+  }
+
+  @Post('register-waste')
+  @ApiOperation({ summary: 'Registra uma perda de ingrediente' })
+  @ApiResponse({ status: 201, description: 'Perda registrada com sucesso' })
+  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  async registerWaste(
+    @Body() registerWasteDto: RegisterWasteDto,
+    @CurrentUser() user: { userId: number; email: string }
+  ) {
+    this.logger.log(`Registrando perda para ingrediente ${registerWasteDto.ingredientId}`);
+    const result = await this.ingredientsService.registerWaste(registerWasteDto, user.userId);
+    return { success: true, data: result };
   }
 }
