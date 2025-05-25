@@ -8,10 +8,13 @@ export class Order {
   id: number;
 
   @OneToMany(() => OrderRecipe, (orderRecipe) => orderRecipe.order, { cascade: true })
-  orderRecipes: OrderRecipe[]; 
+  orderRecipes: OrderRecipe[];
 
   @Column({ default: 'pending' })
-  status: 'pending' | 'completed' | 'canceled'; 
+  status: 'pending' | 'in_production' | 'completed' | 'canceled';
+
+  @Column({ nullable: true })
+  responsible: string;
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
@@ -22,7 +25,7 @@ export class Order {
   @ManyToOne(() => User, (user) => user.orders)
   user: User;
 
-  @Column({ nullable: true }) 
+  @Column({ nullable: true })
   deliveryDate?: Date;
 
   @Column({ type: 'float', nullable: true })

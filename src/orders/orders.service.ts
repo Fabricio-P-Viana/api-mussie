@@ -65,7 +65,10 @@ async findOne(id: number, userId: number): Promise<Order> {
   return order;
 }
   
-  async findAll(pagination: { skip: number; take: number }, userId: number): Promise<{ data: Order[]; total: number }> {
+  async findAll(
+    pagination: { skip: number; take: number },
+    userId: number
+  ): Promise<{ data: Order[]; total: number }> {
     const [data, total] = await this.orderRepository.findAndCount({
       where: {
         user: { id: userId },
@@ -74,6 +77,9 @@ async findOne(id: number, userId: number): Promise<Order> {
       relations: ['orderRecipes', 'orderRecipes.recipe'],
       skip: pagination.skip,
       take: pagination.take,
+      order: {
+        deliveryDate: 'ASC',
+      },
     });
     return { data, total };
   }
@@ -229,6 +235,21 @@ async findOne(id: number, userId: number): Promise<Order> {
     });
     
     return this.findOne(orderId, userId);
+  }
+
+  async assignResponsible(orderId: number, userId: number, responsible: string): Promise<Order> {
+    const order = await this.findOne(orderId, userId);
+
+    if (order.status === 'completed' || order.status === 'canceled') {
+      throw new BadRequestException('Não é possível atribuir responsável a um pedido concluído ou cancelado');
+    }
+
+    order.responsible = responsible;
+    order.status = 'in_production';
+    
+    await this.orderRepository.save(order);
+
+    return order;
   }
 
   async checkProductionFeasibility(orderId: number, userId: number): Promise<CheckProductionResponseDto> {

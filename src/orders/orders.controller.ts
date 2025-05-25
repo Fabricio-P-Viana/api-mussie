@@ -8,6 +8,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth, ApiParam }
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from 'src/users/entities/user.entity';
 import { CheckProductionResponseDto } from './dto/check-production.dto';
+import { Order } from './entities/order.entity';
 
 @ApiTags('orders')
 @Controller('orders')
@@ -98,58 +99,79 @@ export class OrdersController {
   }
 
   @Get(':id/production/progress')
-@ApiOperation({ summary: 'Obtém o progresso de produção de um pedido' })
-@ApiParam({ name: 'id', type: Number, description: 'ID do pedido' })
-@ApiResponse({ status: 200, description: 'Progresso de produção encontrado' })
-@ApiResponse({ status: 404, description: 'Progresso não encontrado' })
-async getProductionProgress(
-  @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
-  @CurrentUser() user: { userId: number; email: string },
-) {
-  this.logger.log(`Buscando progresso de produção do pedido ${id} para o usuário ${user.userId}`);
-  return this.ordersService.getProductionProgress(id, user.userId);
-}
+  @ApiOperation({ summary: 'Obtém o progresso de produção de um pedido' })
+  @ApiParam({ name: 'id', type: Number, description: 'ID do pedido' })
+  @ApiResponse({ status: 200, description: 'Progresso de produção encontrado' })
+  @ApiResponse({ status: 404, description: 'Progresso não encontrado' })
+  async getProductionProgress(
+    @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
+    @CurrentUser() user: { userId: number; email: string },
+  ) {
+    this.logger.log(`Buscando progresso de produção do pedido ${id} para o usuário ${user.userId}`);
+    return this.ordersService.getProductionProgress(id, user.userId);
+  }
 
-@Patch(':id/production/progress')
-@ApiOperation({ summary: 'Salva o progresso de produção de um pedido' })
-@ApiParam({ name: 'id', type: Number, description: 'ID do pedido' })
-@ApiResponse({ status: 200, description: 'Progresso salvo com sucesso' })
-@ApiResponse({ status: 400, description: 'Dados inválidos' })
-async saveProductionProgress(
-  @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
-  @Body() progressData: any,
-  @CurrentUser() user: { userId: number; email: string },
-) {
-  this.logger.log(`Salvando progresso de produção do pedido ${id} para o usuário ${user.userId}`);
-  return this.ordersService.saveProductionProgress(id, progressData, user.userId);
-}
+  @Patch(':id/production/progress')
+  @ApiOperation({ summary: 'Salva o progresso de produção de um pedido' })
+  @ApiParam({ name: 'id', type: Number, description: 'ID do pedido' })
+  @ApiResponse({ status: 200, description: 'Progresso salvo com sucesso' })
+  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  async saveProductionProgress(
+    @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
+    @Body() progressData: any,
+    @CurrentUser() user: { userId: number; email: string },
+  ) {
+    this.logger.log(`Salvando progresso de produção do pedido ${id} para o usuário ${user.userId}`);
+    return this.ordersService.saveProductionProgress(id, progressData, user.userId);
+  }
 
-@Patch(':id/production/complete')
-@ApiOperation({ summary: 'Marca um pedido como concluído na produção' })
-@ApiParam({ name: 'id', type: Number, description: 'ID do pedido' })
-@ApiResponse({ status: 200, description: 'Pedido marcado como concluído' })
-@ApiResponse({ status: 400, description: 'Pedido já concluído ou cancelado' })
-async completeProduction(
-  @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
-  @CurrentUser() user: { userId: number; email: string },
-) {
-  this.logger.log(`Marcando pedido ${id} como concluído na produção para o usuário ${user.userId}`);
-  return this.ordersService.completeProduction(id, user.userId);
-}
+  @Patch(':id/production/complete')
+  @ApiOperation({ summary: 'Marca um pedido como concluído na produção' })
+  @ApiParam({ name: 'id', type: Number, description: 'ID do pedido' })
+  @ApiResponse({ status: 200, description: 'Pedido marcado como concluído' })
+  @ApiResponse({ status: 400, description: 'Pedido já concluído ou cancelado' })
+  async completeProduction(
+    @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
+    @CurrentUser() user: { userId: number; email: string },
+  ) {
+    this.logger.log(`Marcando pedido ${id} como concluído na produção para o usuário ${user.userId}`);
+    return this.ordersService.completeProduction(id, user.userId);
+  }
 
-@Get(':id/check-production')
-@ApiOperation({ summary: 'Verifica se é possível produzir todo o pedido e retorna lista de compras se necessário' })
-@ApiParam({ name: 'id', type: Number, description: 'ID do pedido' })
-@ApiResponse({ 
-  status: 200, 
-  description: 'Resultado da verificação de produção',
-  type: CheckProductionResponseDto,
-})
-async checkProductionFeasibility(
-  @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
-  @CurrentUser() user: { userId: number; email: string },
-) {
-  this.logger.log(`Verificando viabilidade de produção para o pedido ${id} do usuário ${user.userId}`);
-  return this.ordersService.checkProductionFeasibility(id, user.userId);
-}
+  @Patch(':id/assign-responsible')
+  @ApiOperation({ summary: 'Atribui um responsável e marca o pedido como em produção' })
+  @ApiParam({ name: 'id', type: Number, description: 'ID do pedido' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Responsável atribuído e pedido marcado como em produção',
+    type: Order
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Pedido já concluído ou cancelado | Dados inválidos' 
+  })
+  @ApiResponse({ status: 404, description: 'Pedido não encontrado' })
+  async assignResponsible(
+    @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
+    @Body() assignResponsibleData: { responsible: string },
+    @CurrentUser() user: { userId: number; email: string },
+  ) {
+    return this.ordersService.assignResponsible(id, user.userId, assignResponsibleData.responsible);
+  }
+
+  @Get(':id/check-production')
+  @ApiOperation({ summary: 'Verifica se é possível produzir todo o pedido e retorna lista de compras se necessário' })
+  @ApiParam({ name: 'id', type: Number, description: 'ID do pedido' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Resultado da verificação de produção',
+    type: CheckProductionResponseDto,
+  })
+  async checkProductionFeasibility(
+    @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
+    @CurrentUser() user: { userId: number; email: string },
+  ) {
+    this.logger.log(`Verificando viabilidade de produção para o pedido ${id} do usuário ${user.userId}`);
+    return this.ordersService.checkProductionFeasibility(id, user.userId);
+  }
 }

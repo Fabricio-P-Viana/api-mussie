@@ -44,6 +44,7 @@ export class ReportsController {
   @ApiOperation({ summary: 'Obtém receitas mais populares por período' })
   @ApiQuery({ name: 'startDate', required: true, type: String })
   @ApiQuery({ name: 'endDate', required: true, type: String })
+  @ApiQuery({ name: 'includeMinimumStock', required: false, type: Boolean })
   @ApiResponse({ status: 200, description: 'Receitas retornadas' })
   getPopularRecipes(
     @CurrentUser() user: { userId: number; email: string },
@@ -59,8 +60,9 @@ export class ReportsController {
     @CurrentUser() user: { userId: number; email: string },
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
+    @Query('includeMinimumStock') includeMinimumStock: boolean,
   ) {
     this.logger.log(`Obtendo lista de compras do usuário ${user.userId}`);
-    return await this.reportsService.getShoppingList(user.userId, startDate, endDate);
+    return await this.reportsService.getShoppingList(user.userId, startDate, endDate, includeMinimumStock);
   }
 }

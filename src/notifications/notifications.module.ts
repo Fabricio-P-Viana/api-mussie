@@ -1,4 +1,3 @@
-// notifications.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NotificationsService } from './notifications.service';
@@ -14,7 +13,6 @@ import { Order } from 'src/orders/entities/order.entity';
   imports: [
     TypeOrmModule.forFeature([Notification, Ingredient, User,Order]),
     QueuesModule,
-    
   ],
   providers: [NotificationsService, ReportsService],
   controllers: [NotificationsController],
