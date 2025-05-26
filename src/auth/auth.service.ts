@@ -66,6 +66,7 @@ export class AuthService {
         name: registerDto.name,
         nameConfectionery: registerDto.nameConfectionery || null,
         phone: registerDto.phone || null,
+        receiveReports: registerDto.receiveReports || false,
       });
       const savedUser = await this.userRepository.save(user);
       const payload = { email: savedUser.email, sub: savedUser.id };

@@ -10,14 +10,14 @@ export class UsersController {
   private readonly logger = new Logger(AuthService.name);
   constructor(private readonly authService: AuthService) {}
 
-  @Get('me') // Novo endpoint para obter dados do usuário autenticado
-  @UseGuards(JwtAuthGuard) // Protege o endpoint com autenticação JWT
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Obtém os dados do usuário autenticado' })
   @ApiResponse({ status: 200, description: 'Dados do usuário retornados com sucesso' })
   @ApiResponse({ status: 401, description: 'Não autorizado' })
   async getCurrentUser(@CurrentUser() user: { userId: number; email: string }) {
     this.logger.log(`Obtendo dados do usuário ${user.userId}`);
-    const userData = await this.authService.getUserProfile(user.userId); // Método a ser criado
+    const userData = await this.authService.getUserProfile(user.userId); 
     return {
       id: userData.id,
       email: userData.email,

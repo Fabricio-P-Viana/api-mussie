@@ -13,9 +13,9 @@ class RecipeStatusUpdate {
 }
 export class UpdateOrderDto {
   @IsOptional()
-  @IsEnum(['pending', 'completed', 'canceled'])
+  @IsEnum(['pending', 'completed', 'in_production', 'canceled'])
   @ApiProperty({ description: 'Status geral do pedido', enum: ['pending', 'completed', 'canceled'], required: false })
-  status?: 'pending' | 'completed' | 'canceled';
+  status?: 'pending' | 'completed' | 'canceled' | 'in_production';
 
   @IsOptional()
   @IsArray()
