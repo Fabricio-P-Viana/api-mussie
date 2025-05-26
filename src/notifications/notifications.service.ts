@@ -149,7 +149,7 @@ export class NotificationsService {
               userId,
               ingredient.id,
               'near_expiration',
-              `A data de validade do produto ${ingredient.name} está se aproxumando (${expirationDate.toLocaleDateString('pt-BR')}).`,
+              `A data de validade do produto ${ingredient.name} está se aproximando (${expirationDate.toLocaleDateString('pt-BR')}).`,
             );
             this.logger.log(`Expiration notification created for ${ingredient.name}`);
           }
