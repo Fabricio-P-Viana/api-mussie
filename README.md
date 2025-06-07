@@ -10,7 +10,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
-[![API](https://img.shields.io/badge/API-Disable)](https://github.com/seu-usuario/api-mussie)
+[![API](https://img.shields.io/badge/API-Disable)](https://github.com/Fabricio-P-viana/api-mussie)
 
 </div>
 
@@ -122,7 +122,7 @@ Antes de começar, certifique-se de ter instalado:
 ### 1️⃣ Clone o Repositório
 
 ```bash
-git clone https://github.com/seu-usuario/api-mussie.git
+git clone https://github.com/Fabricio-P-viana/api-mussie.git
 cd api-mussie
 ```
 
